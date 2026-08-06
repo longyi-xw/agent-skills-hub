@@ -3,6 +3,6 @@
   "description": "任何场景都应常驻的技能：需求澄清 + Agent 记忆与上下文管理。其它组合通过 extends 继承本层。",
   "extends": [],
   "categories": ["agent-ops"],
-  "skills": ["requirement-analysis"],
+  "skills": ["requirement-analysis", "skill-creator"],
   "exclude": []
 }

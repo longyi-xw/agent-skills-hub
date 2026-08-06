@@ -76,6 +76,30 @@ Windows 默认不给普通用户软链权限，因此：
 - 移除链接只 `unlink` 链接本身，绝不递归删除链接指向的真实内容。
 - team 技能校验会拦截正文里的本机绝对路径，避免把个人环境泄漏进共享仓库。
 
+## 外部源与统一搜索
+
+技能不止来自本仓库。`registry/sources.json` 登记了一批权威的外部技能源
+（superpowers、anthropics/skills、vercel-labs/skills、shadcn 等），它们被浅克隆到
+`~/.agents/.hub-cache/sources/<id>`（不进本仓库 git），供搜索扫描、供导入。
+
+`skills-hub search` 是唯一搜索入口，但**分层分区**：
+
+```
+仓库(本地已有) → 已登记源(已缓存) → 网络(结构化 gh 检索) → 网络(通用兜底 URL)
+```
+
+前一层命中就停，只有前面都没有才向后走——这正是「仓库没有则进行网络搜索」的落地。
+网络层优先用已认证的 `gh` CLI 做 GitHub 代码/仓库检索，结果带 `owner/repo:path`，
+可直接交给 `add`；`gh` 不可用或无命中时，退回给出 skills.sh / SkillsMP / GitHub 的搜索链接。
+
+### new 与 add 的分工
+
+- **`new`**：从零创作，默认套用 **skill-creator** 方法论（先定义「agent 会在哪失败」→
+  写触发条件与主流程 → 细节拆 references → 校验）。
+- **`add`**：导入已有技能，走独立流程（拉取 → vendor 进仓库并打 `source` 标记 → 自动校验）。
+
+两者刻意分开：创作和导入是不同心智，产物的可信度来源也不同（自己写的 vs 带上游归属的拷贝）。
+
 ## 与 `npx skills` 的关系
 
 本工具与 vercel-labs 的 `skills` CLI 生态**兼容而非竞争**：

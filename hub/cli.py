@@ -11,6 +11,8 @@ from pathlib import Path
 from . import agents as agents_mod
 from . import doctor as doctor_mod
 from . import linker, profiles, registry, scaffold, validate
+from . import search as search_mod
+from . import sources as sources_mod
 from .config import (
     HUB_HOME,
     HUB_SKILLS,
@@ -179,12 +181,27 @@ def cmd_list(args) -> int:
 # ----------------------------------------------------------------------- new
 
 
+SKILL_CREATOR_HINT = (
+    "本命令用于**从零创作**技能，默认遵循 skill-creator 方法论：\n"
+    "  1. 先想清楚「agent 在什么场景下、缺了什么会失败」——这决定 description 的触发词\n"
+    "  2. SKILL.md 只写触发条件 + 主流程 + 反面案例；细节拆到 references/ 按需加载\n"
+    "  3. 写完用 `skills-hub validate <name>` 自检\n"
+    "  （若已 vendor 了 skill-creator 技能，可让 agent 直接调用它协助创作）"
+)
+
+
 def cmd_new(args) -> int:
     try:
         path = scaffold.create(args.name, args.category, args.scope, args.description or "")
     except (ValueError, FileExistsError) as exc:
         die(str(exc))
     ok(f"已创建 {path}")
+    header("下一步 · skill-creator 方法论")
+    for line in SKILL_CREATOR_HINT.split("\n"):
+        info(line)
+    creator = registry.index().get("skill-creator")
+    if creator:
+        info(dim(f"参考已装的 skill-creator：{creator.skill_file}"))
     info(f"编辑 {path / 'SKILL.md'}，然后 `skills-hub validate {path.name}`")
     if args.scope == "local":
         info(dim("local 技能不会进 git；打磨好后用 `skills-hub promote` 提升到 team"))
@@ -198,6 +215,132 @@ def cmd_adopt(args) -> int:
         die(str(exc))
     ok(f"已收编到 {path}")
     return 0
+
+
+def cmd_add(args) -> int:
+    """从外部源/仓库导入一个已有技能（区别于 new 的从零创作）。"""
+    header(f"导入外部技能 · {args.ref}")
+    try:
+        path = scaffold.add_external(args.ref, args.category, args.scope, args.name)
+    except (ValueError, FileNotFoundError, FileExistsError, RuntimeError) as exc:
+        die(str(exc))
+    ok(f"已导入到 {path}（作用域 {args.scope}）")
+
+    issues = validate.validate([path.name])
+    errors, warns = validate.summarize(issues)
+    for issue in issues:
+        icon = red("✗") if issue.severity == validate.SEVERITY_ERROR else yellow("!")
+        print(f"  {icon} {issue.message}")
+    if errors:
+        warn(f"导入的技能有 {errors} 个校验错误，请修正后再 promote/启用")
+    else:
+        ok(f"校验通过（{warns} 警告）。已打上来源标记，可 `skills-hub sync` 启用")
+    info(dim("从零创作技能请用 `skills-hub new`；本命令仅用于导入已有技能"))
+    return 0
+
+
+def cmd_search(args) -> int:
+    result = search_mod.search(args.query, want_network=not args.no_net)
+
+    if args.json:
+        print(json.dumps({
+            "repo": [h.__dict__ for h in result.repo],
+            "sources": [h.__dict__ for h in result.sources],
+            "network": [h.__dict__ for h in result.network],
+            "network_kind": result.network_kind,
+            "fallback_urls": result.fallback_urls,
+        }, indent=2, ensure_ascii=False))
+        return 0
+
+    def _row(hit: search_mod.Hit, addable: bool) -> None:
+        add_ref = cyan(hit.ref) if addable else dim(hit.ref)
+        print(f"  {bold(hit.name):<32} {dim(hit.extra)}")
+        if hit.description:
+            print(f"      {dim(hit.description[:96])}")
+        if addable:
+            print(f"      {dim('导入:')} skills-hub add {add_ref} --category <分类>")
+
+    header(f"搜索 “{args.query}”")
+
+    print(bold("\n【仓库】") + dim("  已在本地仓库中"))
+    if result.repo:
+        for hit in result.repo[:12]:
+            mark = green("●") if hit.name in linker.hub_entries() else dim("○")
+            print(f"  {mark} {bold(hit.name):<30} {dim(hit.extra)}")
+            if hit.description:
+                print(f"      {dim(hit.description[:96])}")
+    else:
+        print(dim("  （无）"))
+
+    if result.sources:
+        print(bold("\n【已登记源】") + dim("  已缓存的外部源，可直接导入"))
+        for hit in result.sources[:12]:
+            _row(hit, addable=True)
+
+    if result.network_kind == "structured" and result.network:
+        print(bold("\n【网络·结构化】") + dim("  GitHub 检索，结果可直接导入"))
+        for hit in result.network:
+            _row(hit, addable=True)
+    elif result.network_kind == "general":
+        print(bold("\n【网络·通用兜底】") + dim("  结构化无命中，可在以下入口继续查找"))
+        for label, url in result.fallback_urls:
+            print(f"  · {label}: {cyan(url)}")
+    elif result.network_kind == "skipped":
+        print(dim("\n（本地已有结果，未触发网络搜索；加 --net-only 可强制联网）"))
+
+    return 0
+
+
+def cmd_sources(args) -> int:
+    action = args.action or "list"
+
+    if action == "list":
+        header("外部技能源")
+        for source in sources_mod.all_sources():
+            cached = source.cache_dir().is_dir() or (source.local_mirror and source.local_mirror.is_dir())
+            state = green("已缓存") if cached else dim("未同步")
+            trust_c = green if source.trust == "high" else yellow
+            print(f"  {bold(source.id):<14} {state:<16} {trust_c('信任:' + source.trust):<20} {dim(source.repo)}")
+            if source.description:
+                print(f"      {dim(source.description[:92])}")
+        print(f"\n{dim('同步: skills-hub sources sync [id]   新增: skills-hub sources add <id> <owner/repo>')}")
+        return 0
+
+    if action == "sync":
+        targets = [sources_mod.get(args.id)] if args.id else sources_mod.all_sources()
+        for source in targets:
+            if source is None:
+                die(f"未知源: {args.id}")
+            ok_flag, msg = sources_mod.sync_source(source)
+            (ok if ok_flag else warn)(f"{source.id}: {msg}")
+            if ok_flag:
+                n = len(sources_mod.index_source(source))
+                info(dim(f"扫描到 {n} 个技能"))
+        return 0
+
+    if action == "add":
+        if not args.id or not args.repo:
+            die("用法: skills-hub sources add <id> <owner/repo> [--skills-path skills] [--license MIT]")
+        try:
+            sources_mod.add_source(args.id, args.repo, args.name or "",
+                                   args.skills_path, args.license or "unknown")
+        except ValueError as exc:
+            die(str(exc))
+        ok(f"已登记源 {args.id} → {args.repo}")
+        info("同步: skills-hub sources sync " + args.id)
+        return 0
+
+    if action == "remove":
+        if not args.id:
+            die("用法: skills-hub sources remove <id>")
+        if sources_mod.remove_source(args.id):
+            ok(f"已移除源 {args.id}")
+        else:
+            warn(f"源 {args.id} 不存在")
+        return 0
+
+    die(f"未知子命令: {action}")
+    return 1
 
 
 def cmd_promote(args) -> int:
@@ -491,12 +634,34 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-q", "--quiet", action="store_true", help="不显示描述")
     p.set_defaults(func=cmd_list)
 
-    p = sub.add_parser("new", help="新建技能")
+    p = sub.add_parser("new", help="从零创作技能（默认走 skill-creator 方法论）")
     p.add_argument("name")
     p.add_argument("--category", required=True)
     p.add_argument("--scope", choices=list(SCOPES), default="local")
     p.add_argument("--description")
     p.set_defaults(func=cmd_new)
+
+    p = sub.add_parser("add", help="导入外部已有技能（owner/repo[:path] 或 <源id>:<技能>）")
+    p.add_argument("ref", help="owner/repo、owner/repo:路径、或 <源id>:<技能名>")
+    p.add_argument("--category", required=True)
+    p.add_argument("--scope", choices=list(SCOPES), default="local")
+    p.add_argument("--name", help="重命名")
+    p.set_defaults(func=cmd_add)
+
+    p = sub.add_parser("search", help="统一搜索：仓库 → 已登记源 → 网络（结构化优先）")
+    p.add_argument("query")
+    p.add_argument("--json", action="store_true")
+    p.add_argument("--no-net", action="store_true", help="只搜本地，不联网")
+    p.set_defaults(func=cmd_search)
+
+    p = sub.add_parser("sources", help="外部源：list / sync / add / remove")
+    p.add_argument("action", nargs="?", choices=["list", "sync", "add", "remove"])
+    p.add_argument("id", nargs="?")
+    p.add_argument("repo", nargs="?", help="add 时的 owner/repo")
+    p.add_argument("--name")
+    p.add_argument("--skills-path", default="skills")
+    p.add_argument("--license")
+    p.set_defaults(func=cmd_sources)
 
     p = sub.add_parser("adopt", help="收编主机上已有的技能进仓库")
     p.add_argument("path")

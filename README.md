@@ -85,16 +85,69 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 
 ---
 
+## 统一搜索与获取技能
+
+一个入口找技能，**分层、分区展示**，来源一目了然：
+
+```bash
+skills-hub search "react form"
+```
+
+搜索顺序（前面命中就不惊动后面）：
+
+```
+【仓库】     本地仓库里已有的技能
+   ↓ 没有
+【已登记源】 已缓存的外部源（superpowers / anthropic / vercel / shadcn…）里的技能，可直接导入
+   ↓ 没有
+【网络】     结构化优先：用已认证的 gh 搜 GitHub，结果带 owner/repo:path，可直接导入
+   ↓ 结构化也没有
+【网络·通用兜底】 给出 skills.sh / SkillsMP / GitHub 搜索入口链接
+```
+
+### 两条获取路径，分工明确
+
+| 你要做的 | 用哪个命令 | 说明 |
+|---|---|---|
+| **从零创作**一个新技能 | `skills-hub new <名> --category <分类>` | 默认走 **skill-creator** 方法论，生成骨架并给出创作指引 |
+| **导入**搜索到的现成技能 | `skills-hub add <ref> --category <分类>` | 从外部源/GitHub 拉取，带来源标记 vendor 进仓库并自动校验 |
+
+`add` 的 `<ref>` 支持三种写法：
+
+```bash
+skills-hub add superpowers:systematic-debugging --category workflow   # 从已登记源
+skills-hub add owner/repo --category backend                          # 整仓（自动找 SKILL.md）
+skills-hub add owner/repo:path/to/skill --category backend            # 仓库内指定技能
+```
+
+导入的技能默认进 `local`（先试用），加 `--scope team` 直接 vendor 进团队并共享。
+
+### 外部源管理
+
+```bash
+skills-hub sources list                       # 查看已登记源与缓存状态
+skills-hub sources sync [id]                  # 浅克隆/更新源到缓存，供 search 扫描
+skills-hub sources add myteam org/skills-repo # 登记自定义源
+```
+
+内置源见 [`registry/sources.json`](registry/sources.json)：superpowers、anthropic、vercel、shadcn。
+已 vendor 进仓库的第三方技能归属见 [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md)。
+
+---
+
 ## 命令一览
 
 | 命令 | 作用 |
 |---|---|
 | `install` | 首次安装：建 hub + 接入本机 agent |
 | `sync` | `git pull` + 校验 + 重建所有链接（团队成员日常同步） |
+| `search <词>` | 统一搜索：仓库 → 已登记源 → 网络（`--no-net` 只搜本地） |
 | `list` / `ls` | 查看技能（`--category` `--scope` `--profile` `--json`） |
+| `new <名> --category <分类>` | **从零创作**技能（走 skill-creator，默认 local） |
+| `add <ref> --category <分类>` | **导入**外部已有技能（源/GitHub），带来源标记 |
+| `sources list\|sync\|add\|remove` | 外部源管理 |
 | `profile list\|show\|use\|create` | 技能组合管理 |
 | `agent list\|link\|unlink` | agent 接入管理 |
-| `new <名> --category <分类>` | 新建技能（默认 local） |
 | `adopt <路径> --category <分类>` | 收编主机上已有的技能进仓库 |
 | `promote <名>` | 把 local 技能提升为 team |
 | `validate [名…]` | 校验技能（团队评审门禁，CI 同款） |

@@ -20,6 +20,9 @@ from .util import read_json, write_json
 HUB_HOME = Path(os.environ.get("SKILLS_HUB_HOME", Path.home() / ".agents")).expanduser()
 HUB_SKILLS = HUB_HOME / "skills"
 STATE_FILE = HUB_HOME / "hub-state.json"
+# 外部源克隆缓存（不进 git，可随时清理重建）
+HUB_CACHE = HUB_HOME / ".hub-cache"
+SOURCES_CACHE = HUB_CACHE / "sources"
 
 SCOPES = ("team", "local")
 
@@ -67,6 +70,10 @@ def profiles_dir() -> Path:
 
 def categories_file() -> Path:
     return repo_root() / "registry" / "categories.json"
+
+
+def sources_file() -> Path:
+    return repo_root() / "registry" / "sources.json"
 
 
 def load_categories() -> dict:

@@ -1,0 +1,8 @@
+{
+  "label": "研发方法论",
+  "description": "常驻的通用工作方法：头脑风暴、TDD、系统化调试、写技能。适合叠加在任何开发场景之上。",
+  "extends": ["base"],
+  "categories": ["workflow"],
+  "skills": [],
+  "exclude": []
+}
