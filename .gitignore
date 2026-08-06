@@ -1,0 +1,9 @@
+# 本地私有技能不进 git —— 每个人的 local 作用域互不干扰
+skills/local/*
+!skills/local/.gitkeep
+!skills/local/README.md
+
+__pycache__/
+*.py[cod]
+.DS_Store
+*.tmp

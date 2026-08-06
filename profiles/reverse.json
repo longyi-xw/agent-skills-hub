@@ -1,0 +1,7 @@
+{
+  "label": "逆向分析",
+  "description": "客户端/协议逆向与取证分析：逆向流程、脚本开发、安全审核，不加载前端与需求类技能以省上下文。",
+  "extends": ["base"],
+  "skills": ["reverse-engineering", "script-development", "python-backend", "security-audit", "feature-mapping"],
+  "exclude": []
+}

@@ -1,0 +1,174 @@
+"""技能索引：扫描仓库、解析 SKILL.md frontmatter。
+
+仓库布局：  skills/<scope>/<category>/<skill-name>/SKILL.md
+            scope    = team | local
+            category = registry/categories.json 中登记的分类
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from pathlib import Path
+
+from .config import SCOPES, load_categories, skills_dir
+
+# ------------------------------------------------------- 零依赖 frontmatter 解析
+
+_FM_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)", re.DOTALL)
+_KV_RE = re.compile(r"^([A-Za-z_][\w-]*)\s*:\s*(.*)$")
+
+
+def _strip_quotes(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def parse_frontmatter(text: str) -> dict:
+    """解析 SKILL.md 顶部的 YAML frontmatter。
+
+    只支持 Agent Skills 规范实际用到的子集：标量、行内列表、`-` 列表、
+    以及 `>`/`|` 折叠块。刻意不引入 PyYAML，保证零依赖跨平台可跑。
+    """
+    match = _FM_RE.match(text)
+    if not match:
+        return {}
+
+    data: dict = {}
+    key: str | None = None
+    block_indent = 0
+    mode: str | None = None  # "fold" | "literal" | "list"
+
+    for raw in match.group(1).split("\n"):
+        line = raw.rstrip()
+        if not line.strip():
+            if mode in ("fold", "literal") and key:
+                data[key] = (data.get(key, "") + "\n").rstrip() + "\n"
+            continue
+
+        indent = len(line) - len(line.lstrip())
+
+        if mode in ("fold", "literal") and key and indent > block_indent:
+            piece = line.strip()
+            sep = "\n" if mode == "literal" else " "
+            data[key] = (data[key] + sep + piece).strip() if data.get(key) else piece
+            continue
+
+        if mode == "list" and key and line.lstrip().startswith("- "):
+            data[key].append(_strip_quotes(line.lstrip()[2:].strip()))
+            continue
+
+        kv = _KV_RE.match(line.strip())
+        if not kv:
+            continue
+        key, value = kv.group(1), kv.group(2).strip()
+        block_indent = indent
+        mode = None
+
+        if value in (">", ">-", "|", "|-"):
+            mode = "literal" if value.startswith("|") else "fold"
+            data[key] = ""
+        elif value.startswith("[") and value.endswith("]"):
+            inner = value[1:-1].strip()
+            data[key] = [_strip_quotes(p.strip()) for p in inner.split(",") if p.strip()]
+        elif value == "":
+            mode = "list"
+            data[key] = []
+        else:
+            data[key] = _strip_quotes(value)
+
+    return data
+
+
+# ----------------------------------------------------------------- 技能模型
+
+
+@dataclass
+class Skill:
+    name: str
+    scope: str          # team | local
+    category: str
+    path: Path          # 技能目录
+    meta: dict
+
+    @property
+    def description(self) -> str:
+        return str(self.meta.get("description", "")).strip()
+
+    @property
+    def status(self) -> str:
+        """team 技能默认视为已评审通过；local 技能标记为 local。"""
+        explicit = self.meta.get("status")
+        if explicit:
+            return str(explicit)
+        return "verified" if self.scope == "team" else "local"
+
+    @property
+    def tags(self) -> list[str]:
+        raw = self.meta.get("tags", [])
+        if isinstance(raw, str):
+            return [t.strip() for t in raw.split(",") if t.strip()]
+        return [str(t) for t in raw]
+
+    @property
+    def skill_file(self) -> Path:
+        return self.path / "SKILL.md"
+
+    def rel(self) -> str:
+        return f"{self.scope}/{self.category}/{self.name}"
+
+
+def _load_skill(skill_dir: Path, scope: str, category: str) -> Skill | None:
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.is_file():
+        return None
+    try:
+        meta = parse_frontmatter(skill_md.read_text(encoding="utf-8"))
+    except OSError:
+        meta = {}
+    name = str(meta.get("name") or skill_dir.name).strip()
+    return Skill(name=name, scope=scope, category=category, path=skill_dir, meta=meta)
+
+
+def discover(scopes: tuple[str, ...] = SCOPES) -> list[Skill]:
+    """扫描仓库中所有技能，按名称排序。"""
+    found: list[Skill] = []
+    for scope in scopes:
+        base = skills_dir(scope)
+        if not base.is_dir():
+            continue
+        for category_dir in sorted(base.iterdir()):
+            if not category_dir.is_dir() or category_dir.name.startswith("."):
+                continue
+            for skill_dir in sorted(category_dir.iterdir()):
+                if not skill_dir.is_dir() or skill_dir.name.startswith("."):
+                    continue
+                skill = _load_skill(skill_dir, scope, category_dir.name)
+                if skill:
+                    found.append(skill)
+    return sorted(found, key=lambda s: (s.category, s.name))
+
+
+def index() -> dict[str, Skill]:
+    """按技能名索引。同名时 local 覆盖 team —— 本地私有版本优先生效。"""
+    result: dict[str, Skill] = {}
+    for skill in discover():
+        if skill.name in result and skill.scope == "team":
+            continue
+        result[skill.name] = skill
+    return result
+
+
+def by_category() -> dict[str, list[Skill]]:
+    grouped: dict[str, list[Skill]] = {}
+    for skill in discover():
+        grouped.setdefault(skill.category, []).append(skill)
+    return grouped
+
+
+def category_label(category: str) -> str:
+    meta = load_categories().get(category)
+    if isinstance(meta, dict):
+        return str(meta.get("label", category))
+    return category

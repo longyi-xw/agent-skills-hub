@@ -1,0 +1,27 @@
+# 团队评审门禁示例 —— 放到 .github/workflows/validate.yml
+# 每次 PR 都跑 skills-hub validate，未通过校验的技能无法合入 team 作用域。
+name: validate-skills
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - "registry/**"
+      - "profiles/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 校验所有技能
+        run: ./bin/skills-hub validate
+      - name: 校验 profile 引用的技能都存在
+        run: |
+          for p in profiles/*.json; do
+            name=$(basename "$p" .json)
+            ./bin/skills-hub profile show "$name" >/dev/null
+          done

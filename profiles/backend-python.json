@@ -1,0 +1,8 @@
+{
+  "label": "Python 后端",
+  "description": "Python 服务端与自动化脚本开发，含安全审核。",
+  "extends": ["base"],
+  "categories": ["requirements", "analysis"],
+  "skills": ["python-backend", "script-development", "security-audit"],
+  "exclude": []
+}

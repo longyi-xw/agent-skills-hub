@@ -1,0 +1,16 @@
+{
+  "name": "project-onboarding",
+  "version": "1.0.0",
+  "description": "快速理解并总结陌生代码仓库，帮助开发者在新入职或接手新项目时迅速缕清整体结构、技术栈、业务需求、目录职责与功能分块，并明确新功能该加在哪里。偏向前端/桌面端(Electron、Tauri)/移动端项目，亦适用于后端、全栈、CLI 等各类仓库。",
+  "author": {
+    "name": "Longyi"
+  },
+  "keywords": [
+    "onboarding",
+    "codebase",
+    "project-analysis",
+    "frontend",
+    "tauri",
+    "electron"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "requirement-analysis",
+  "version": "1.0.0",
+  "description": "以资深产品经理视角，从立项文档、MRD、PRD、原型说明、评审纪要等材料中提炼关键产品需求，并把「产品语言」翻译成「研发语言」——产出流程图、架构设计图、核心需求说明、项目简介与研发视角的实施难点总结。",
+  "author": {
+    "name": "Longyi"
+  },
+  "keywords": [
+    "requirement-analysis",
+    "prd",
+    "mrd",
+    "product-manager",
+    "architecture",
+    "flowchart"
+  ]
+}

@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+# skills-hub —— macOS / Linux 入口
+set -e
+
+# 解析真实脚本位置（跟随软链）
+SCRIPT="$0"
+while [ -L "$SCRIPT" ]; do
+  DIR="$(cd -P "$(dirname "$SCRIPT")" && pwd)"
+  SCRIPT="$(readlink "$SCRIPT")"
+  case "$SCRIPT" in
+    /*) ;;
+    *) SCRIPT="$DIR/$SCRIPT" ;;
+  esac
+done
+BIN_DIR="$(cd -P "$(dirname "$SCRIPT")" && pwd)"
+REPO_DIR="$(dirname "$BIN_DIR")"
+
+PY=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    if "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' 2>/dev/null; then
+      PY="$candidate"
+      break
+    fi
+  fi
+done
+
+if [ -z "$PY" ]; then
+  echo "skills-hub 需要 Python 3.9+，未在 PATH 中找到。" >&2
+  echo "  macOS:  brew install python3" >&2
+  echo "  Linux:  sudo apt install python3   /   sudo dnf install python3" >&2
+  exit 1
+fi
+
+export SKILLS_HUB_ROOT="${SKILLS_HUB_ROOT:-$REPO_DIR}"
+# 用 PYTHONPATH 而不是 cd，保证 `skills-hub project .` 里的相对路径仍以用户当前目录为准
+export PYTHONPATH="$REPO_DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec "$PY" -X utf8 -m hub "$@"

@@ -1,0 +1,16 @@
+{
+  "name": "study-notes",
+  "version": "1.0.0",
+  "description": "阅读与学习笔记助手：对用户的读书笔记 / 课程笔记初稿进行检索核对、分析纠错、答疑引导，并按小节 / 章节 / 全书三种粒度生成可直接粘贴到 Notion 的 Markdown 总结。",
+  "author": {
+    "name": "Longyi"
+  },
+  "keywords": [
+    "study-notes",
+    "reading-notes",
+    "note-taking",
+    "summary",
+    "fact-check",
+    "notion"
+  ]
+}

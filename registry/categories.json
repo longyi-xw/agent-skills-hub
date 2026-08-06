@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "categories": {
+    "requirements": {
+      "label": "需求整理",
+      "description": "把模糊诉求转成可执行的需求、验收标准与任务拆解"
+    },
+    "frontend": {
+      "label": "前端开发",
+      "description": "Web / 桌面端 / 移动端界面实现与工程化"
+    },
+    "backend": {
+      "label": "后端开发",
+      "description": "Python 服务、逆向分析、自动化脚本"
+    },
+    "analysis": {
+      "label": "功能梳理与项目理解",
+      "description": "陌生代码库上手、功能链路梳理、改动落点定位"
+    },
+    "agent-ops": {
+      "label": "Agent 记忆与上下文",
+      "description": "长期记忆的写入与召回、上下文预算管理与压缩"
+    },
+    "quality": {
+      "label": "质量与安全",
+      "description": "代码漏洞审核、视觉验证测试、回归验证"
+    },
+    "knowledge": {
+      "label": "知识与学习",
+      "description": "读书笔记、学习资料的整理、校对与总结"
+    }
+  }
+}

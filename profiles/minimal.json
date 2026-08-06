@@ -1,0 +1,8 @@
+{
+  "label": "极简",
+  "description": "只保留记忆与上下文管理，适合上下文紧张的长会话或小改动。",
+  "extends": [],
+  "categories": ["agent-ops"],
+  "skills": [],
+  "exclude": []
+}

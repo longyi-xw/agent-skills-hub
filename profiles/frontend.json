@@ -1,0 +1,8 @@
+{
+  "label": "前端项目",
+  "description": "前端 / 桌面端开发：界面实现 + 视觉验证测试 + 需求与项目理解。",
+  "extends": ["base"],
+  "categories": ["frontend", "requirements", "analysis"],
+  "skills": ["visual-verification", "security-audit"],
+  "exclude": []
+}

@@ -1,0 +1,8 @@
+{
+  "label": "通用开发",
+  "description": "日常开发默认组合：需求整理、项目理解、记忆与上下文、代码安全审核。不含前端/逆向等重型技能。",
+  "extends": ["base"],
+  "categories": ["requirements", "analysis"],
+  "skills": ["security-audit"],
+  "exclude": []
+}
