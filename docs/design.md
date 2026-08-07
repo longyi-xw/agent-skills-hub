@@ -76,11 +76,41 @@ Windows 默认不给普通用户软链权限，因此：
 - 移除链接只 `unlink` 链接本身，绝不递归删除链接指向的真实内容。
 - team 技能校验会拦截正文里的本机绝对路径，避免把个人环境泄漏进共享仓库。
 
+## 索引模型：仓库存指针，技能按需下载
+
+这是本工具与「把技能拷进仓库」做法的关键区别。
+
+**问题**：如果把每个外部技能的内容都拷进仓库，仓库会随技能数量线性膨胀；而且拷贝是
+某一时刻的快照，上游更新后就过期了——只有在线源才是最新版。
+
+**做法**：外部技能只在 `registry/manifest.json` 里登记一条指针（几行 JSON：来源、路径、
+版本），内容**不进仓库**。`sync` 时按索引从在线源下载到缓存 `~/.agents/.hub-cache`，
+再链接进 hub。
+
+```
+registry/manifest.json ──sync──▶ ~/.agents/.hub-cache/sources/<源> ──▶ hub ──▶ 各 agent
+   (进 git, 只有指针)              (不进 git, git clone 的内容)
+```
+
+推论：
+
+- 仓库体积与技能数量**解耦**——加 100 个外部技能，仓库只多 100 行 JSON。
+- `update` = 对缓存里的 clone 做 `git fetch`/checkout，一键拿上游最新。
+- 卸载 = 删索引条目 + 解链；重装 = 加回条目 + `sync`。**配置文件即安装状态**。
+- 缓存可随时整个删掉，`sync` 会按索引重新下载，不丢任何东西。
+
+**原创技能是例外**：用 `new` 从零写的、线上不存在的技能，作为**内容**留在
+`skills/team|local/`——它们以本仓库为唯一来源，本仓库对它们而言就是「在线最新」。
+所以仓库里存的永远是「本地原创内容 + 外部技能指针」，不存外部技能的副本。
+
+关于同源多技能：同一个源仓库（如 obra/superpowers）只克隆**一份**到
+`~/.agents/.hub-cache/sources/superpowers`，其下的多个技能各自链接进去，天然去重。
+
 ## 外部源与统一搜索
 
-技能不止来自本仓库。`registry/sources.json` 登记了一批权威的外部技能源
-（superpowers、anthropics/skills、vercel-labs/skills、shadcn 等），它们被浅克隆到
-`~/.agents/.hub-cache/sources/<id>`（不进本仓库 git），供搜索扫描、供导入。
+`registry/sources.json` 登记了一批权威的外部技能源
+（superpowers、anthropics/skills、vercel-labs/skills、shadcn 等）。它们被浅克隆到
+`~/.agents/.hub-cache/sources/<id>`（不进本仓库 git），供搜索扫描、供索引下载。
 
 `skills-hub search` 是唯一搜索入口，但**分层分区**：
 

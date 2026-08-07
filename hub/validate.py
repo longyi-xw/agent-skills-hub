@@ -32,6 +32,10 @@ class Issue:
 def _check(skill: Skill) -> list[Issue]:
     issues: list[Issue] = []
 
+    # 索引技能尚未下载时无内容可校验 —— 跳过（sync 后自然会校验缓存里的真实内容）
+    if getattr(skill, "origin", "repo") == "indexed" and not getattr(skill, "installed", True):
+        return issues
+
     def err(msg: str) -> None:
         issues.append(Issue(skill.rel(), SEVERITY_ERROR, msg))
 

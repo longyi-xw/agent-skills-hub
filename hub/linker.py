@@ -12,7 +12,7 @@ from pathlib import Path
 from . import agents as agents_mod
 from . import profiles as profiles_mod
 from . import registry
-from .config import HUB_SKILLS, load_state, repo_root, save_state
+from .config import HUB_CACHE, HUB_SKILLS, load_state, repo_root, save_state
 from .util import (
     LINK_COPY,
     is_link,
@@ -39,7 +39,17 @@ def _owned_by_hub(path: Path) -> bool:
     if target is None:
         return False
     resolved = (path.parent / target).resolve() if not target.is_absolute() else target.resolve()
-    for base in (HUB_SKILLS.resolve(), repo_root().resolve()):
+    bases = [HUB_SKILLS.resolve(), repo_root().resolve(), HUB_CACHE.resolve()]
+    # 有本地镜像的源（如 superpowers）不在上述路径下，也应视为本工具管理
+    try:
+        from . import manifest as manifest_mod
+        for entry in manifest_mod.entries():
+            content = manifest_mod.installed_dir(entry).resolve()
+            bases.append(content)
+            bases.append(content.parent)
+    except Exception:
+        pass
+    for base in bases:
         try:
             resolved.relative_to(base)
             return True
@@ -83,13 +93,18 @@ def sync_hub(skill_names: list[str], mode: str | None = None) -> SyncResult:
 
     for name in sorted(wanted):
         skill = known[name]
-        dst = HUB_SKILLS / name
-        if is_link(dst) and not _owned_by_hub(dst):
-            skipped.append((name, "已被外部链接占用"))
+        if skill.origin == "indexed" and not skill.installed:
+            skipped.append((name, "索引技能未下载，先运行 sync"))
             continue
+        if not (skill.path / "SKILL.md").is_file():
+            skipped.append((name, "内容缺失，跳过"))
+            continue
+        dst = HUB_SKILLS / name
         if dst.exists() and not is_link(dst):
             skipped.append((name, "同名真实目录已存在"))
             continue
+        # wanted 名称由本工具主张所有权：不存在则建，已是链接则更新指向最新目标
+        # （make_link 会先移除旧链接，从而修正诸如镜像→缓存这类目标漂移）
         make_link(skill.path, dst, mode)
         linked.append(name)
 

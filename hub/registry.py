@@ -87,18 +87,26 @@ def parse_frontmatter(text: str) -> dict:
 @dataclass
 class Skill:
     name: str
-    scope: str          # team | local
+    scope: str          # team | local | indexed
     category: str
-    path: Path          # 技能目录
+    path: Path          # 技能目录（indexed 技能指向缓存，可能尚未下载）
     meta: dict
+    origin: str = "repo"     # repo | indexed
+    installed: bool = True    # indexed 技能是否已下载
+    source: str = ""         # indexed 技能的来源（源 id 或 owner/repo）
 
     @property
     def description(self) -> str:
-        return str(self.meta.get("description", "")).strip()
+        desc = str(self.meta.get("description", "")).strip()
+        if not desc and self.origin == "indexed" and not self.installed:
+            return "（未同步，运行 skills-hub sync 下载）"
+        return desc
 
     @property
     def status(self) -> str:
-        """team 技能默认视为已评审通过；local 技能标记为 local。"""
+        """team 技能默认视为已评审通过；local 技能标记为 local；indexed 单列。"""
+        if self.origin == "indexed":
+            return "indexed" if self.installed else "index-pending"
         explicit = self.meta.get("status")
         if explicit:
             return str(explicit)
@@ -131,8 +139,9 @@ def _load_skill(skill_dir: Path, scope: str, category: str) -> Skill | None:
     return Skill(name=name, scope=scope, category=category, path=skill_dir, meta=meta)
 
 
-def discover(scopes: tuple[str, ...] = SCOPES) -> list[Skill]:
-    """扫描仓库中所有技能，按名称排序。"""
+def discover(scopes: tuple[str, ...] = SCOPES,
+             include_indexed: bool = True) -> list[Skill]:
+    """扫描技能：仓库原创内容（team/local）+ 索引声明的外部技能（indexed）。"""
     found: list[Skill] = []
     for scope in scopes:
         base = skills_dir(scope)
@@ -147,7 +156,41 @@ def discover(scopes: tuple[str, ...] = SCOPES) -> list[Skill]:
                 skill = _load_skill(skill_dir, scope, category_dir.name)
                 if skill:
                     found.append(skill)
+
+    if include_indexed:
+        repo_names = {s.name for s in found}
+        found.extend(_discover_indexed(exclude=repo_names))
+
     return sorted(found, key=lambda s: (s.category, s.name))
+
+
+def _discover_indexed(exclude: set[str]) -> list[Skill]:
+    """把 manifest 里声明的外部技能纳入 —— 已下载则读真实 frontmatter，否则占位。"""
+    from . import manifest as manifest_mod  # 延迟导入避免循环
+
+    skills: list[Skill] = []
+    for entry in manifest_mod.entries():
+        if entry.name in exclude:
+            continue
+        content_dir = manifest_mod.installed_dir(entry)
+        installed = (content_dir / "SKILL.md").is_file()
+        meta: dict = {}
+        if installed:
+            try:
+                meta = parse_frontmatter((content_dir / "SKILL.md").read_text(encoding="utf-8"))
+            except OSError:
+                meta = {}
+        skills.append(Skill(
+            name=entry.name,
+            scope="indexed",
+            category=entry.category,
+            path=content_dir,
+            meta=meta or {"name": entry.name, "description": ""},
+            origin="indexed",
+            installed=installed,
+            source=entry.source,
+        ))
+    return skills
 
 
 def index() -> dict[str, Skill]:

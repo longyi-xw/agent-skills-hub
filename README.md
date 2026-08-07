@@ -107,10 +107,10 @@ skills-hub search "react form"
 
 ### 两条获取路径，分工明确
 
-| 你要做的 | 用哪个命令 | 说明 |
+| 你要做的 | 用哪个命令 | 落地方式 |
 |---|---|---|
-| **从零创作**一个新技能 | `skills-hub new <名> --category <分类>` | 默认走 **skill-creator** 方法论，生成骨架并给出创作指引 |
-| **导入**搜索到的现成技能 | `skills-hub add <ref> --category <分类>` | 从外部源/GitHub 拉取，带来源标记 vendor 进仓库并自动校验 |
+| **从零创作**一个新技能 | `skills-hub new <名> --category <分类>` | 作为**内容**写进仓库（原创技能以本仓库为家），默认走 **skill-creator** 方法论 |
+| **索引**一个在线已有技能 | `skills-hub add <ref> --category <分类>` | 只往索引 `manifest.json` 写一条**指针**，内容 sync 时才下载到缓存 |
 
 `add` 的 `<ref>` 支持三种写法：
 
@@ -118,9 +118,35 @@ skills-hub search "react form"
 skills-hub add superpowers:systematic-debugging --category workflow   # 从已登记源
 skills-hub add owner/repo --category backend                          # 整仓（自动找 SKILL.md）
 skills-hub add owner/repo:path/to/skill --category backend            # 仓库内指定技能
+skills-hub add superpowers:brainstorming --ref-version v6.1.0 ...     # 锁定版本，缺省取最新
 ```
 
-导入的技能默认进 `local`（先试用），加 `--scope team` 直接 vendor 进团队并共享。
+---
+
+## 索引模型：仓库存指针，技能按需下载
+
+**外部技能不进仓库**，仓库里只有一份索引 `registry/manifest.json`（每条几行 JSON）。
+这样做的理由：
+
+- **仓库不膨胀**：技能再多，仓库里也只是指针；内容躺在缓存 `~/.agents/.hub-cache`（不进 git）。
+- **永远拿最新**：`sync` 从在线源下载，`update` 一键拉取上游更新——在线版才是最新版。
+- **配置即状态**：改 `manifest.json`（或用 `add`/`uninstall`）就是安装/卸载/换版本，改完 `sync` 生效。
+
+```
+索引 manifest.json ──sync──▶ 下载到缓存 ~/.agents/.hub-cache ──▶ 链接进 hub ──▶ 各 agent
+   (进 git, 几行指针)          (不进 git, 随时可删可重建)
+```
+
+| 命令 | 作用 |
+|---|---|
+| `skills-hub add <ref> --category <分类>` | 加一条索引并立即下载 |
+| `skills-hub sync` | 按索引下载所有外部技能 + 重建链接（团队成员拉到最新索引后一步到位） |
+| `skills-hub sync --update` / `skills-hub update [名…]` | 把索引技能更新到在线最新 |
+| `skills-hub uninstall <名> [--purge]` | 从索引移除并解链（`--purge` 连缓存一起删） |
+
+> **原创 vs 索引**：你用 `new` 写的、线上不存在的技能，作为内容留在仓库 `skills/team|local/`
+> （它们以本仓库为唯一来源，本身就是「最新」）；从社区来的技能一律走索引，不占仓库体积。
+> `list` / `status` 会用 `[team]` `[local]` `[索引]` 清楚标注每个技能的归属与下载状态。
 
 ### 外部源管理
 
@@ -143,8 +169,10 @@ skills-hub sources add myteam org/skills-repo # 登记自定义源
 | `sync` | `git pull` + 校验 + 重建所有链接（团队成员日常同步） |
 | `search <词>` | 统一搜索：仓库 → 已登记源 → 网络（`--no-net` 只搜本地） |
 | `list` / `ls` | 查看技能（`--category` `--scope` `--profile` `--json`） |
-| `new <名> --category <分类>` | **从零创作**技能（走 skill-creator，默认 local） |
-| `add <ref> --category <分类>` | **导入**外部已有技能（源/GitHub），带来源标记 |
+| `new <名> --category <分类>` | **从零创作**技能，作为内容进仓库（走 skill-creator，默认 local） |
+| `add <ref> --category <分类>` | **索引**在线技能：写指针 + 下载（不进仓库） |
+| `update [名…]` | 把索引技能更新到在线最新 |
+| `uninstall <名> [--purge]` | 从索引移除并解链 |
 | `sources list\|sync\|add\|remove` | 外部源管理 |
 | `profile list\|show\|use\|create` | 技能组合管理 |
 | `agent list\|link\|unlink` | agent 接入管理 |
@@ -230,15 +258,21 @@ agent-skills-hub/
 │   ├── cli.py              命令行
 │   ├── config.py           三层路径模型
 │   ├── agents.py           各 agent 目录注册表
-│   ├── registry.py         技能扫描 + frontmatter 解析
+│   ├── registry.py         技能扫描（原创 + 索引）+ frontmatter 解析
+│   ├── manifest.py         外部技能索引：按指针下载/更新
+│   ├── sources.py          外部源登记与克隆缓存
+│   ├── search.py           统一分层搜索（仓库→源→网络）
 │   ├── profiles.py         组合解析
 │   ├── linker.py           软链/联结/复制分发
 │   ├── validate.py         校验门禁
 │   ├── scaffold.py         new / adopt / promote
 │   └── doctor.py           环境体检与清理
-├── registry/categories.json  分类登记
+├── registry/
+│   ├── categories.json     分类登记
+│   ├── sources.json        外部源
+│   └── manifest.json       外部技能索引（指针，不含内容）
 ├── profiles/*.json           技能组合
-├── skills/team/<分类>/        团队技能（进 git）
+├── skills/team/<分类>/        团队原创技能（进 git）
 ├── skills/local/             本地私有技能（不进 git）
 └── docs/                     文档
 ```

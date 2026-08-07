@@ -76,6 +76,10 @@ def sources_file() -> Path:
     return repo_root() / "registry" / "sources.json"
 
 
+def manifest_file() -> Path:
+    return repo_root() / "registry" / "manifest.json"
+
+
 def load_categories() -> dict:
     data = read_json(categories_file(), default={})
     return data.get("categories", {}) if isinstance(data, dict) else {}

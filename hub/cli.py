@@ -11,6 +11,7 @@ from pathlib import Path
 from . import agents as agents_mod
 from . import doctor as doctor_mod
 from . import linker, profiles, registry, scaffold, validate
+from . import manifest as manifest_mod
 from . import search as search_mod
 from . import sources as sources_mod
 from .config import (
@@ -117,6 +118,21 @@ def cmd_sync(args) -> int:
         else:
             warn(f"git pull 失败（继续用本地内容）: {result.stderr.strip().splitlines()[-1] if result.stderr.strip() else ''}")
 
+    # 按索引下载外部技能到缓存（这是「不存内容、按需下载」的核心）
+    manifest_entries = manifest_mod.entries()
+    if manifest_entries:
+        header("下载索引技能")
+        dl, failed = 0, 0
+        for name, ok_flag, msg in manifest_mod.fetch_all(update=args.update):
+            if ok_flag:
+                dl += 1
+                if args.update or "已下载" in msg:
+                    info(f"{green('▽')} {name}  {dim(msg)}")
+            else:
+                failed += 1
+                warn(f"{name}: {msg}")
+        ok(f"索引技能就绪 {dl}/{len(manifest_entries)}" + (f"，{failed} 个失败" if failed else ""))
+
     issues = validate.validate()
     errors, _ = validate.summarize(issues)
     if errors and not args.force:
@@ -163,18 +179,26 @@ def cmd_list(args) -> int:
     for skill in skills:
         grouped.setdefault(skill.category, []).append(skill)
 
+    def _scope_tag(skill) -> str:
+        if skill.origin == "indexed":
+            return cyan("[索引:已装]") if skill.installed else dim("[索引:待同步]")
+        return cyan("[team]") if skill.scope == "team" else yellow("[local]")
+
     for category, items in grouped.items():
         header(f"{registry.category_label(category)}  {dim(category)}")
         for skill in items:
             mark = green("●") if skill.name in active else dim("○")
-            scope_tag = cyan("[team]") if skill.scope == "team" else yellow("[local]")
-            print(f"  {mark} {bold(skill.name):<34} {scope_tag}")
+            print(f"  {mark} {bold(skill.name):<34} {_scope_tag(skill)}")
+            if skill.origin == "indexed" and not args.quiet:
+                print(f"      {dim('索引自 ' + skill.source)}")
             if skill.description and not args.quiet:
                 desc = skill.description
                 print(f"      {dim(desc[:110] + ('…' if len(desc) > 110 else ''))}")
 
-    print(f"\n{dim('● = 当前组合已启用    ○ = 仓库中存在但未启用')}")
-    print(dim(f"共 {len(skills)} 个技能，其中 {sum(1 for s in skills if s.name in active)} 个已启用"))
+    idx = sum(1 for s in skills if s.origin == "indexed")
+    print(f"\n{dim('● = 当前组合已启用    ○ = 未启用    [索引] = 不存内容，sync 时下载')}")
+    print(dim(f"共 {len(skills)} 个技能（原创 {len(skills) - idx} + 索引 {idx}），"
+              f"{sum(1 for s in skills if s.name in active)} 个已启用"))
     return 0
 
 
@@ -217,25 +241,105 @@ def cmd_adopt(args) -> int:
     return 0
 
 
-def cmd_add(args) -> int:
-    """从外部源/仓库导入一个已有技能（区别于 new 的从零创作）。"""
-    header(f"导入外部技能 · {args.ref}")
-    try:
-        path = scaffold.add_external(args.ref, args.category, args.scope, args.name)
-    except (ValueError, FileNotFoundError, FileExistsError, RuntimeError) as exc:
-        die(str(exc))
-    ok(f"已导入到 {path}（作用域 {args.scope}）")
+def _parse_add_ref(ref: str) -> tuple[str, str, str | None]:
+    """把 add 引用解析成 (source, skill_name, path)。
 
-    issues = validate.validate([path.name])
+      <源id>:<技能>            → source=源id, name=技能, path=None
+      owner/repo               → source=owner/repo, name=repo名, path=None(自动找)
+      owner/repo:path/to/skill → source=owner/repo, name=末段, path=路径
+    """
+    if ":" in ref and "/" not in ref.split(":", 1)[0]:
+        src, skill = ref.split(":", 1)
+        if sources_mod.get(src):
+            return src, skill, None
+    if ":" in ref:
+        repo_part, sub = ref.split(":", 1)
+        return repo_part, Path(sub).name, sub
+    parts = ref.split("/")
+    if len(parts) > 2:
+        repo_part = "/".join(parts[:2])
+        sub = "/".join(parts[2:])
+        return repo_part, Path(sub).name, sub
+    return ref, parts[-1], None
+
+
+def cmd_add(args) -> int:
+    """把一个外部技能加入索引并下载（不拷贝内容进仓库；区别于 new 的从零创作）。"""
+    header(f"加入索引 · {args.ref}")
+    source, name, path = _parse_add_ref(args.ref)
+    name = args.name or name
+
+    manifest_mod.add_entry(name, source, args.category, path=path, ref=args.ref_version or "")
+    ok(f"已写入索引：{name}  ←  {source}" + (f":{path}" if path else ""))
+
+    entry = manifest_mod.get(name)
+    fetched, msg = manifest_mod.fetch(entry, update=True)
+    if not fetched:
+        manifest_mod.remove_entry(name)
+        die(f"下载失败，已回滚索引条目：{msg}")
+    ok(f"已下载到缓存：{msg}")
+
+    issues = validate.validate([name])
     errors, warns = validate.summarize(issues)
     for issue in issues:
         icon = red("✗") if issue.severity == validate.SEVERITY_ERROR else yellow("!")
         print(f"  {icon} {issue.message}")
     if errors:
-        warn(f"导入的技能有 {errors} 个校验错误，请修正后再 promote/启用")
-    else:
-        ok(f"校验通过（{warns} 警告）。已打上来源标记，可 `skills-hub sync` 启用")
-    info(dim("从零创作技能请用 `skills-hub new`；本命令仅用于导入已有技能"))
+        warn(f"该技能有 {errors} 个校验问题（不影响使用，仅提示）")
+    ok(f"就绪。加入某个组合或 `skills-hub sync` 后即可被各 agent 使用")
+    info(dim("卸载: skills-hub uninstall " + name + "   更新: skills-hub update " + name))
+    info(dim("从零创作技能请用 `skills-hub new`；本命令用于索引在线已有技能"))
+    return 0
+
+
+def cmd_update(args) -> int:
+    names = args.names
+    targets = [manifest_mod.get(n) for n in names] if names else manifest_mod.entries()
+    header("更新索引技能")
+    changed = 0
+    for entry in targets:
+        if entry is None:
+            warn(f"索引中没有: {names}")
+            continue
+        before = manifest_mod.current_ref(entry)
+        ok_flag, msg = manifest_mod.fetch(entry, update=True)
+        after = manifest_mod.current_ref(entry)
+        if ok_flag:
+            moved = before != after and before != "-" and after != "-"
+            mark = green("▲ " + before + "→" + after) if moved else dim("已是最新")
+            print(f"  {entry.name:<28} {mark}")
+            changed += 1 if moved else 0
+        else:
+            warn(f"{entry.name}: {msg}")
+    ok(f"更新完成，{changed} 个有变化。运行 `skills-hub sync` 让改动生效")
+    return 0
+
+
+def cmd_uninstall(args) -> int:
+    entry = manifest_mod.get(args.name)
+    if entry is None:
+        die(f"索引中没有技能 '{args.name}'（原创技能请直接删目录或用 promote 反向操作）")
+    manifest_mod.remove_entry(args.name)
+    ok(f"已从索引移除 {args.name}")
+    # 从 hub / agent 目录解链
+    dst = linker.HUB_SKILLS / args.name
+    if linker.is_link(dst):
+        linker.remove_link(dst)
+    for agent_id in load_state().get("agents") or []:
+        spec = agents_mod.resolve(agent_id)
+        if spec and not spec.native_hub:
+            adst = spec.global_dir / args.name
+            if linker.is_link(adst):
+                linker.remove_link(adst)
+    if args.purge:
+        import shutil
+        clone = manifest_mod._clone_dir(entry)
+        # 只有当没有其它索引条目共用该克隆时才删
+        others = [e for e in manifest_mod.entries() if manifest_mod._clone_dir(e) == clone]
+        if not others and clone.exists() and str(clone).startswith(str(manifest_mod.SOURCES_CACHE)):
+            shutil.rmtree(clone, ignore_errors=True)
+            ok(f"已清理缓存 {clone}")
+    ok("重装：skills-hub add 回来再 sync；或把条目加回 manifest.json")
     return 0
 
 
@@ -508,9 +612,12 @@ def cmd_status(args) -> int:
     print(f"  规范 hub    {HUB_SKILLS}")
     print(f"  链接方式    {state.get('link_mode') or '未初始化'}")
     print(f"  当前组合    {bold(str(state.get('profile')))}  ({len(active)} 个技能已启用)")
-    print(f"  仓库技能    {len(skills)} 个"
+    idx = [s for s in skills if s.origin == "indexed"]
+    installed_idx = sum(1 for s in idx if s.installed)
+    print(f"  原创技能    {len(skills) - len(idx)} 个"
           f"  (team {sum(1 for s in skills if s.scope == 'team')} /"
           f" local {sum(1 for s in skills if s.scope == 'local')})")
+    print(f"  索引技能    {len(idx)} 个  (已下载 {installed_idx})")
 
     linked = state.get("agents") or []
     print(f"  已接入      {', '.join(linked) if linked else '（无）'}")
@@ -620,9 +727,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--copy", action="store_true", help="用复制代替软链（无软链权限时）")
     p.set_defaults(func=cmd_install)
 
-    p = sub.add_parser("sync", help="拉取团队技能并重建所有链接")
+    p = sub.add_parser("sync", help="拉取团队索引 + 下载外部技能 + 重建所有链接")
     p.add_argument("--profile", help="同步后启用的组合，默认沿用当前")
     p.add_argument("--no-pull", action="store_true", help="跳过 git pull")
+    p.add_argument("--update", action="store_true", help="顺便把索引技能更新到在线最新")
     p.add_argument("--force", action="store_true", help="校验失败也继续")
     p.set_defaults(func=cmd_sync)
 
@@ -641,12 +749,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--description")
     p.set_defaults(func=cmd_new)
 
-    p = sub.add_parser("add", help="导入外部已有技能（owner/repo[:path] 或 <源id>:<技能>）")
+    p = sub.add_parser("add", help="把在线技能加入索引并下载（owner/repo[:path] 或 <源id>:<技能>）")
     p.add_argument("ref", help="owner/repo、owner/repo:路径、或 <源id>:<技能名>")
     p.add_argument("--category", required=True)
-    p.add_argument("--scope", choices=list(SCOPES), default="local")
     p.add_argument("--name", help="重命名")
+    p.add_argument("--ref-version", help="锁定分支/标签/commit，缺省取最新")
     p.set_defaults(func=cmd_add)
+
+    p = sub.add_parser("update", help="更新索引技能到在线最新（默认全部）")
+    p.add_argument("names", nargs="*")
+    p.set_defaults(func=cmd_update)
+
+    p = sub.add_parser("uninstall", aliases=["rm-skill"], help="从索引移除并解链某技能")
+    p.add_argument("name")
+    p.add_argument("--purge", action="store_true", help="连同下载缓存一起删除")
+    p.set_defaults(func=cmd_uninstall)
 
     p = sub.add_parser("search", help="统一搜索：仓库 → 已登记源 → 网络（结构化优先）")
     p.add_argument("query")

@@ -6,7 +6,7 @@ import re
 import shutil
 from pathlib import Path
 
-from .config import SOURCES_CACHE, load_categories, skills_dir
+from .config import load_categories, skills_dir
 from .registry import parse_frontmatter
 from .validate import NAME_RE
 
@@ -138,104 +138,12 @@ def _set_frontmatter_fields(skill_md: Path, fields: dict[str, str]) -> None:
     skill_md.write_text(f"{head}{body_fm}{close}{rest}", encoding="utf-8")
 
 
-def _parse_ref(ref: str) -> tuple[str, str, str | None]:
-    """解析 add 的引用。
-
-    返回 (kind, locator, subpath)：
-      kind="source"  → locator=源id, subpath=技能名        （<source-id>:<skill>）
-      kind="git"     → locator=owner/repo, subpath=仓库内路径或None
-    """
-    from . import sources as sources_mod
-
-    if ":" in ref and "/" not in ref.split(":", 1)[0]:
-        left, right = ref.split(":", 1)
-        if sources_mod.get(left):
-            return "source", left, right
-    # owner/repo 或 owner/repo:path 或 owner/repo/path...
-    if ":" in ref:
-        repo_part, sub = ref.split(":", 1)
-    else:
-        parts = ref.split("/")
-        if len(parts) > 2:
-            repo_part = "/".join(parts[:2])
-            sub = "/".join(parts[2:])
-        else:
-            repo_part, sub = ref, None
-    return "git", repo_part, sub
-
-
-def _clone_repo(repo: str) -> Path:
-    from .util import run
-
-    cache = SOURCES_CACHE / "_add" / repo.replace("/", "__")
-    cache.parent.mkdir(parents=True, exist_ok=True)
-    if (cache / ".git").is_dir():
-        run(["git", "-C", str(cache), "pull", "--ff-only", "--depth", "1"])
-    else:
-        res = run(["git", "clone", "--depth", "1", f"https://github.com/{repo}.git", str(cache)])
-        if res.returncode != 0:
-            raise RuntimeError(f"克隆 {repo} 失败：{(res.stderr or '').strip().splitlines()[-1:]}")
-    return cache
-
-
-def _resolve_skill_source(ref: str) -> tuple[Path, str]:
-    """把 add 引用解析成 (本机技能目录, 来源标记字符串)。"""
-    from . import sources as sources_mod
-
-    kind, locator, sub = _parse_ref(ref)
-
-    if kind == "source":
-        source = sources_mod.get(locator)
-        sources_mod.sync_source(source)
-        skill_dir = sources_mod.find_skill_dir(source, sub)
-        if skill_dir is None:
-            raise FileNotFoundError(f"源 '{locator}' 中找不到技能 '{sub}'")
-        return skill_dir, f"{source.repo or locator} ({source.license})"
-
-    # git
-    root = _clone_repo(locator)
-    if sub:
-        candidate = root / sub
-        if (candidate / "SKILL.md").is_file():
-            skill_dir = candidate
-        elif candidate.is_dir():
-            # 目录下再找一个 SKILL.md
-            found = next((p.parent for p in candidate.rglob("SKILL.md")), None)
-            skill_dir = found or candidate
-        else:
-            raise FileNotFoundError(f"{locator} 中路径 '{sub}' 下没有 SKILL.md")
-    else:
-        found = next((p.parent for p in root.rglob("SKILL.md")), None)
-        if found is None:
-            raise FileNotFoundError(f"{locator} 仓库里没有找到 SKILL.md")
-        skill_dir = found
-    return skill_dir, locator
-
-
-def add_external(ref: str, category: str, scope: str = "local",
-                 rename: str | None = None) -> Path:
-    """从外部源/仓库导入一个技能进本仓库，并打上来源标记（区别于 new 的从零创建）。"""
-    categories = load_categories()
-    if categories and category not in categories:
-        raise ValueError(
-            f"分类 '{category}' 未登记，可用：{', '.join(sorted(categories))}"
-        )
-
-    skill_dir, provenance = _resolve_skill_source(ref)
-    target = adopt(skill_dir, category, scope=scope, rename=rename, move=False)
-
-    _set_frontmatter_fields(target / "SKILL.md", {
-        "source": provenance,
-        "imported_via": "skills-hub add",
-    })
-    return target
-
-
 def promote(name: str, category: str | None = None) -> Path:
     """把 local 技能提升为 team 技能（走完校验后由 PR 合入）。"""
     from . import registry
 
-    matches = [s for s in registry.discover(("local",)) if s.name == name]
+    matches = [s for s in registry.discover(("local",), include_indexed=False)
+               if s.name == name]
     if not matches:
         raise KeyError(f"local 作用域下没有技能 '{name}'")
     skill = matches[0]

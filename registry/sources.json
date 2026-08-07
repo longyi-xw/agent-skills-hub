@@ -10,8 +10,7 @@
       "license": "MIT",
       "trust": "high",
       "tags": ["workflow", "tdd", "debugging", "collaboration"],
-      "description": "Claude Code 核心方法论技能库：TDD、系统化调试、协作模式、写技能等",
-      "local_mirror": "~/.codex/superpowers/skills"
+      "description": "Claude Code 核心方法论技能库：TDD、系统化调试、协作模式、写技能等"
     },
     "anthropic": {
       "name": "Anthropic Official Skills",
