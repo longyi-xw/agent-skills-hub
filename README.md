@@ -131,6 +131,19 @@ skills-hub add superpowers:brainstorming --ref-version v6.1.0 ...     # 锁定�
 - **仓库不膨胀**：技能再多，仓库里也只是指针；内容躺在缓存 `~/.agents/.hub-cache`（不进 git）。
 - **永远拿最新**：`sync` 从在线源下载，`update` 一键拉取上游更新——在线版才是最新版。
 - **配置即状态**：改 `manifest.json`（或用 `add`/`uninstall`）就是安装/卸载/换版本，改完 `sync` 生效。
+- **索引自描述**：每条指针都带 `description` 与 `tags`（用途与应用范围），**不下载也能看懂
+  这技能干嘛、用在哪**；`add` 时会自动从技能的 frontmatter 回填，也可用 `--description`/`--tags` 覆盖。
+
+```jsonc
+// registry/manifest.json 里的一条指针
+"systematic-debugging": {
+  "source": "superpowers",          // 来自哪个源
+  "category": "workflow",           // 归入的分类
+  "ref": "main",                    // 版本；缺省取最新
+  "description": "遇到 bug、测试失败时，先做系统化根因定位再改",  // 不下载也看得懂
+  "tags": ["调试", "排障", "根因分析", "测试"]                    // 应用范围
+}
+```
 
 ```
 索引 manifest.json ──sync──▶ 下载到缓存 ~/.agents/.hub-cache ──▶ 链接进 hub ──▶ 各 agent

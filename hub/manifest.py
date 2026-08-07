@@ -28,6 +28,8 @@ class Entry:
     path: str | None     # 源仓库内技能路径；None → 由源推断
     ref: str             # 分支/标签/commit；"" 或 "latest" → 默认分支
     pin: bool
+    description: str      # 用途说明 —— 让人不下载也能看懂这技能干嘛、用在哪
+    tags: list[str]      # 应用范围标签
 
 
 def _load() -> dict:
@@ -40,6 +42,9 @@ def entries() -> list[Entry]:
     for name, meta in sorted(_load().get("skills", {}).items()):
         if not isinstance(meta, dict):
             continue
+        raw_tags = meta.get("tags", [])
+        tags = [t.strip() for t in raw_tags.split(",")] if isinstance(raw_tags, str) \
+            else [str(t) for t in raw_tags]
         result.append(Entry(
             name=name,
             source=str(meta.get("source", "")),
@@ -47,6 +52,8 @@ def entries() -> list[Entry]:
             path=meta.get("path"),
             ref=str(meta.get("ref", "") or ""),
             pin=bool(meta.get("pin", False)),
+            description=str(meta.get("description", "")).strip(),
+            tags=[t for t in tags if t],
         ))
     return result
 
@@ -59,14 +66,32 @@ def get(name: str) -> Entry | None:
 
 
 def add_entry(name: str, source: str, category: str,
-              path: str | None = None, ref: str = "") -> None:
+              path: str | None = None, ref: str = "",
+              description: str = "", tags: list[str] | None = None) -> None:
     data = _load()
     entry: dict = {"source": source, "category": category}
     if path:
         entry["path"] = path
     if ref:
         entry["ref"] = ref
+    if description:
+        entry["description"] = description
+    if tags:
+        entry["tags"] = tags
     data.setdefault("skills", {})[name] = entry
+    write_json(manifest_file(), data)
+
+
+def update_entry_meta(name: str, description: str = "", tags: list[str] | None = None) -> None:
+    """回填索引条目的描述/标签（add 下载后自动从 frontmatter 抓取）。"""
+    data = _load()
+    entry = data.get("skills", {}).get(name)
+    if not isinstance(entry, dict):
+        return
+    if description and not entry.get("description"):
+        entry["description"] = description
+    if tags and not entry.get("tags"):
+        entry["tags"] = tags
     write_json(manifest_file(), data)
 
 

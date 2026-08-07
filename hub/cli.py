@@ -188,12 +188,13 @@ def cmd_list(args) -> int:
         header(f"{registry.category_label(category)}  {dim(category)}")
         for skill in items:
             mark = green("●") if skill.name in active else dim("○")
-            print(f"  {mark} {bold(skill.name):<34} {_scope_tag(skill)}")
-            if skill.origin == "indexed" and not args.quiet:
-                print(f"      {dim('索引自 ' + skill.source)}")
+            suffix = dim("  ↓" + skill.source) if skill.origin == "indexed" else ""
+            print(f"  {mark} {bold(skill.name):<34} {_scope_tag(skill)}{suffix}")
             if skill.description and not args.quiet:
                 desc = skill.description
                 print(f"      {dim(desc[:110] + ('…' if len(desc) > 110 else ''))}")
+            if skill.tags and not args.quiet:
+                print(f"      {dim('适用: ' + ' · '.join(skill.tags[:6]))}")
 
     idx = sum(1 for s in skills if s.origin == "indexed")
     print(f"\n{dim('● = 当前组合已启用    ○ = 未启用    [索引] = 不存内容，sync 时下载')}")
@@ -269,7 +270,10 @@ def cmd_add(args) -> int:
     source, name, path = _parse_add_ref(args.ref)
     name = args.name or name
 
-    manifest_mod.add_entry(name, source, args.category, path=path, ref=args.ref_version or "")
+    manual_tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
+    manifest_mod.add_entry(name, source, args.category, path=path,
+                           ref=args.ref_version or "",
+                           description=args.description or "", tags=manual_tags or None)
     ok(f"已写入索引：{name}  ←  {source}" + (f":{path}" if path else ""))
 
     entry = manifest_mod.get(name)
@@ -278,6 +282,22 @@ def cmd_add(args) -> int:
         manifest_mod.remove_entry(name)
         die(f"下载失败，已回滚索引条目：{msg}")
     ok(f"已下载到缓存：{msg}")
+
+    # 从下载到的 SKILL.md 自动回填描述/标签，让索引条目自描述（未提供时）
+    content = manifest_mod.installed_dir(entry) / "SKILL.md"
+    if content.is_file():
+        fm = registry.parse_frontmatter(content.read_text(encoding="utf-8"))
+        auto_tags = fm.get("tags")
+        if isinstance(auto_tags, str):
+            auto_tags = [t.strip() for t in auto_tags.split(",") if t.strip()]
+        manifest_mod.update_entry_meta(
+            name,
+            description=str(fm.get("description", "")).strip(),
+            tags=auto_tags if isinstance(auto_tags, list) else None,
+        )
+        desc = manifest_mod.get(name).description
+        if desc:
+            info(dim(f"用途：{desc[:100]}"))
 
     issues = validate.validate([name])
     errors, warns = validate.summarize(issues)
@@ -754,6 +774,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--category", required=True)
     p.add_argument("--name", help="重命名")
     p.add_argument("--ref-version", help="锁定分支/标签/commit，缺省取最新")
+    p.add_argument("--description", help="用途说明（缺省自动从技能 frontmatter 回填）")
+    p.add_argument("--tags", help="应用范围标签，逗号分隔（缺省自动回填）")
     p.set_defaults(func=cmd_add)
 
     p = sub.add_parser("update", help="更新索引技能到在线最新（默认全部）")

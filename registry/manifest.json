@@ -1,31 +1,65 @@
 {
   "version": 1,
-  "comment": "外部技能索引（不存内容，只存指针）。sync 时按此索引从在线源下载到 ~/.agents/.hub-cache，始终取最新。字段：source=sources.json 里的源 id 或 owner/repo；category=归入的分类；path=源仓库内技能路径(缺省=<源.skills_path>/<name>)；ref=分支/标签/commit(缺省=默认分支, 即最新)；pin=true 则 update 时不动它。改这个文件再 sync 即可一键更新/卸载/重装。",
+  "comment": "外部技能索引（不存内容，只存指针）。sync 时按此索引从在线源下载到 ~/.agents/.hub-cache，始终取最新。字段：source=sources.json 里的源 id 或 owner/repo；category=归入的分类；path=源仓库内技能路径(缺省=<源.skills_path>/<name>)；ref=分支/标签/commit(缺省=默认分支, 即最新)；pin=true 则 update 时不动它；description/tags=用途与应用范围，让人不下载也能看懂这技能干嘛(add 时会自动从技能 frontmatter 回填)。改这个文件再 sync 即可一键更新/卸载/重装。",
   "skills": {
     "brainstorming": {
       "source": "superpowers",
       "category": "workflow",
-      "ref": "main"
+      "ref": "main",
+      "description": "任何创造性工作（做需求、建组件、加功能、改行为）动手前先用它探索意图、需求与设计，避免一上来就写代码。",
+      "tags": [
+        "需求",
+        "设计",
+        "创意",
+        "前期"
+      ]
     },
     "systematic-debugging": {
       "source": "superpowers",
       "category": "workflow",
-      "ref": "main"
+      "ref": "main",
+      "description": "遇到 bug、测试失败或异常行为时，在提出修复方案之前先做系统化根因定位，避免瞎改。",
+      "tags": [
+        "调试",
+        "排障",
+        "根因分析",
+        "测试"
+      ]
     },
     "test-driven-development": {
       "source": "superpowers",
       "category": "workflow",
-      "ref": "main"
+      "ref": "main",
+      "description": "实现任何功能或修复 bug 之前，先写测试再写实现的红-绿-重构流程。",
+      "tags": [
+        "测试",
+        "TDD",
+        "质量",
+        "开发流程"
+      ]
     },
     "writing-skills": {
       "source": "superpowers",
       "category": "workflow",
-      "ref": "main"
+      "ref": "main",
+      "description": "创建、编辑或部署前验证技能时使用，把测试驱动开发的思路套用到技能文档编写。",
+      "tags": [
+        "技能开发",
+        "文档",
+        "方法论"
+      ]
     },
     "skill-creator": {
       "source": "anthropic",
       "category": "workflow",
-      "ref": "main"
+      "ref": "main",
+      "description": "从零创建新技能、改进现有技能、跑评测与优化触发描述的官方指南；本仓库 new 命令默认参考它。",
+      "tags": [
+        "技能开发",
+        "脚手架",
+        "评测",
+        "官方"
+      ]
     }
   }
 }

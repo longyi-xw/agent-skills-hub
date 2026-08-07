@@ -180,12 +180,18 @@ def _discover_indexed(exclude: set[str]) -> list[Skill]:
                 meta = parse_frontmatter((content_dir / "SKILL.md").read_text(encoding="utf-8"))
             except OSError:
                 meta = {}
+        # 索引里登记的描述/标签作为「目录卡片」——即便尚未下载也能看懂用途与范围
+        meta.setdefault("name", entry.name)
+        if entry.description:
+            meta.setdefault("description", entry.description)
+        if entry.tags:
+            meta.setdefault("tags", entry.tags)
         skills.append(Skill(
             name=entry.name,
             scope="indexed",
             category=entry.category,
             path=content_dir,
-            meta=meta or {"name": entry.name, "description": ""},
+            meta=meta,
             origin="indexed",
             installed=installed,
             source=entry.source,
