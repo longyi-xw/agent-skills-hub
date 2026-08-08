@@ -1,0 +1,8 @@
+{
+  "label": "文档处理",
+  "description": "处理 Word/Excel/PPT/PDF 等办公文档时启用，叠加基础层。",
+  "extends": ["base"],
+  "categories": ["documents"],
+  "skills": [],
+  "exclude": []
+}

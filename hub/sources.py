@@ -132,8 +132,14 @@ def sync_source(source: Source) -> tuple[bool, str]:
     cache = source.cache_dir()
     cache.parent.mkdir(parents=True, exist_ok=True)
     if (cache / ".git").is_dir():
-        res = run(["git", "-C", str(cache), "pull", "--ff-only", "--depth", "1"])
-        return res.returncode == 0, (res.stdout or res.stderr).strip().splitlines()[-1] if (res.stdout or res.stderr).strip() else "已更新"
+        # 缓存是一次性可重建的，直接对齐远端即可；用 pull --ff-only 会在
+        # 浅克隆/曾 checkout 过特定 ref 时报 "Not possible to fast-forward"
+        fetched = run(["git", "-C", str(cache), "fetch", "--depth", "1", "origin", "HEAD"])
+        if fetched.returncode != 0:
+            return False, (fetched.stderr or "fetch 失败").strip().splitlines()[-1]
+        res = run(["git", "-C", str(cache), "reset", "--hard", "FETCH_HEAD"])
+        return res.returncode == 0, "已更新" if res.returncode == 0 else \
+            (res.stderr or "reset 失败").strip().splitlines()[-1]
     res = run(["git", "clone", "--depth", "1", source.clone_url(), str(cache)])
     if res.returncode != 0:
         return False, (res.stderr or "").strip().splitlines()[-1] if (res.stderr or "").strip() else "克隆失败"

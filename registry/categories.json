@@ -32,6 +32,10 @@
     "workflow": {
       "label": "研发流程与方法论",
       "description": "TDD、系统化调试、头脑风暴、写技能等通用工作方法（多来自 superpowers 等社区）"
+    },
+    "documents": {
+      "label": "文档处理",
+      "description": "Word / Excel / PPT / PDF 等办公文档的读取、生成与编辑"
     }
   }
 }

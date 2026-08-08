@@ -2,7 +2,14 @@
   "label": "评审模式",
   "description": "只做代码审核与验证：漏洞审核 + 视觉验证 + 项目理解，不加载实现类技能，避免 agent 顺手改代码。",
   "extends": [],
-  "categories": ["quality", "analysis"],
-  "skills": ["context-management"],
+  "categories": [
+    "quality",
+    "analysis"
+  ],
+  "skills": [
+    "context-management",
+    "verification-before-completion",
+    "webapp-testing"
+  ],
   "exclude": []
 }

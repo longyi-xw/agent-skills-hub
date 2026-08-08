@@ -36,12 +36,11 @@
       "name": "shadcn/ui (前端组件)",
       "type": "git",
       "repo": "shadcn-ui/ui",
-      "skills_path": "",
+      "skills_path": "skills",
       "license": "MIT",
       "trust": "high",
       "tags": ["frontend", "components", "react", "tailwind"],
-      "description": "shadcn/ui 组件库。非标准 skills 仓库——用于前端组件用法检索，add 前建议先 search 确认路径",
-      "note": "shadcn 本体是组件注册表而非 skills 仓库；如需 shadcn 相关的组件技能，search 会同时在网络层检索社区技能。"
+      "description": "shadcn/ui 官方技能：组件增删查改、样式与组合、Radix→Base UI 迁移"
     }
   }
 }
