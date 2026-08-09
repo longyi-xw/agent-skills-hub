@@ -71,17 +71,96 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 
 切换会重建 hub 并刷新所有已接入 agent。内置组合：
 
-| 组合 | 内容 |
-|---|---|
-| `default` | 需求整理 + 项目理解 + 记忆/上下文 + 安全审核 |
-| `frontend` | 前端开发 + 视觉验证 + 需求/理解 |
-| `backend-python` | Python 后端 + 脚本开发 + 安全审核 |
-| `reverse` | 逆向分析 + 脚本 + 后端 + 功能梳理 |
-| `review` | 漏洞审核 + 视觉验证 + 项目理解（不含实现类） |
-| `minimal` | 只留记忆与上下文管理 |
-| `all` | 仓库全部技能 |
+| 组合 | 技能数 | 内容 |
+|---|---|---|
+| `default` | 9 | 需求整理 + 项目理解 + 记忆/上下文 + 安全审核 + 写方案 + 收尾验证 |
+| `frontend` | 13 | 前端开发 + shadcn 组件 + 视觉设计 + 视觉验证 + Playwright 测试 |
+| `backend-python` | 9 | Python 后端 + 脚本开发 + 安全审核 |
+| `reverse` | 9 | 逆向分析 + 脚本 + 后端 + 功能梳理 |
+| `review` | 7 | 漏洞审核 + 视觉验证 + 项目理解 + 收尾验证（不含实现类） |
+| `workflow` | 12 | 研发方法论：TDD、系统化调试、头脑风暴、计划、并行、写技能 |
+| `documents` | 8 | Word / Excel / PPT / PDF 文档处理 |
+| `minimal` | 2 | 只留记忆与上下文管理 |
+| `base` | 4 | 基础层，被其它组合 `extends` 继承 |
+| `all` | 30 | 全部技能 |
 
 自定义：`skills-hub profile create mine --categories backend,quality --skills agent-memory`
+
+---
+
+## 技能清单
+
+共 **30 个**技能：**12 个原创**（内容在本仓库）+ **18 个索引**（指针在仓库，内容 sync 时下载）。
+用 `skills-hub list` 查看实时状态，`skills-hub list --category <分类>` 按分类筛选。
+
+#### 需求整理 `requirements`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `requirement-analysis` | 原创 | 把 PRD / MRD / 立项文档翻译成研发能落地的流程图、架构图与实施难点 |
+
+#### 功能梳理与项目理解 `analysis`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `project-onboarding` | 原创 | 陌生仓库快速上手：结构、技术栈、数据流、新功能该加在哪 |
+| `feature-mapping` | 原创 | 深挖单条功能链路：入口→数据流→出口，给出影响面清单 |
+
+#### 前端开发 `frontend`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `frontend-development` | 原创 | 前端/桌面端实现规范：先复用后新建、状态选型、可访问性、自测清单 |
+| `shadcn` | 索引 · shadcn/ui | shadcn 组件的增删查改、样式与组合、Radix→Base UI 迁移 |
+| `frontend-design` | 索引 · anthropic | 有辨识度的界面视觉设计指导 |
+
+#### 后端开发 `backend`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `python-backend` | 原创 | Python 服务端：接口分层、同步/异步选型、DB、密钥、日志 |
+| `reverse-engineering` | 原创 | 授权场景下的逆向：静态+动态、Frida、抓包、加固对抗 |
+| `script-development` | 原创 | 自动化脚本：参数化、幂等、dry-run、破坏性操作保护 |
+| `mcp-builder` | 索引 · anthropic | 构建高质量 MCP 服务端 |
+
+#### 质量与安全 `quality`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `security-audit` | 原创 | 漏洞审核：注入/越权/密钥/SSRF/反序列化，产出定位到行的清单 |
+| `visual-verification` | 原创 | 界面改动的截图验证：多视口/主题/状态矩阵、前后对比 |
+| `webapp-testing` | 索引 · anthropic | 用 Playwright 驱动真实浏览器测试本地 Web 应用 |
+| `verification-before-completion` | 索引 · superpowers | 宣称"完成"前必须先跑验证并确认输出 |
+
+#### Agent 记忆与上下文 `agent-ops`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `agent-memory` | 原创 | 长期记忆：什么值得记、怎么存、召回时如何判断可信度 |
+| `context-management` | 原创 | 上下文预算：分层加载、外置中间结果、子任务隔离、交接固化 |
+
+#### 研发流程与方法论 `workflow`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `brainstorming` | 索引 · superpowers | 创造性工作动手前先探索意图与设计 |
+| `systematic-debugging` | 索引 · superpowers | 提修复方案前先做系统化根因定位 |
+| `test-driven-development` | 索引 · superpowers | 红-绿-重构，先写测试再写实现 |
+| `writing-plans` | 索引 · superpowers | 多步任务动代码前先写方案 |
+| `executing-plans` | 索引 · superpowers | 按已写好的方案分阶段执行、带评审点 |
+| `dispatching-parallel-agents` | 索引 · superpowers | 独立任务并行拆分给子 agent |
+| `using-git-worktrees` | 索引 · superpowers | 用 worktree 隔离工作区 |
+| `writing-skills` | 索引 · superpowers | 把 TDD 思路套用到技能文档编写 |
+| `skill-creator` | 索引 · anthropic | 官方技能创作/优化/评测指南（`new` 命令默认参考） |
+
+#### 文档处理 `documents`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `docx` | 索引 · anthropic | Word 文档读取、生成、编辑 |
+| `xlsx` | 索引 · anthropic | Excel 表格与数据处理 |
+| `pptx` | 索引 · anthropic | PPT 幻灯片生成与编辑 |
+| `pdf` | 索引 · anthropic | PDF 解析、提取、表单处理 |
+
+#### 知识与学习 `knowledge`
+| 技能 | 归属 | 用途 |
+|---|---|---|
+| `study-notes` | 原创 | 读书/学习笔记的校对、答疑与分级总结 |
+
+> **原创** = 内容在本仓库 `skills/team/`，本仓库即其来源。
+> **索引** = 只在 `registry/manifest.json` 存指针，`sync` 时从上游下载最新版，不占仓库体积。
 
 ---
 
