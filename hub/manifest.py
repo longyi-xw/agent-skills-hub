@@ -30,6 +30,7 @@ class Entry:
     pin: bool
     description: str      # 用途说明 —— 让人不下载也能看懂这技能干嘛、用在哪
     tags: list[str]      # 应用范围标签
+    summary: str         # 一句话用途（README 清单用；缺省则截断 description）
 
 
 def _load() -> dict:
@@ -54,6 +55,7 @@ def entries() -> list[Entry]:
             pin=bool(meta.get("pin", False)),
             description=str(meta.get("description", "")).strip(),
             tags=[t for t in tags if t],
+            summary=str(meta.get("summary", "")).strip(),
         ))
     return result
 

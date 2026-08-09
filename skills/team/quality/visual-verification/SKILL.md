@@ -4,6 +4,7 @@ description: 界面改动的视觉验证测试——用真实渲染的截图而�
 category: quality
 tags: [testing, visual, screenshot, ui, regression]
 status: verified
+summary: 界面改动的截图验证：多视口/主题/状态矩阵、前后对比
 ---
 
 # 视觉验证测试

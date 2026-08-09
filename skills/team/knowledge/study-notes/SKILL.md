@@ -1,6 +1,7 @@
 ---
 name: study-notes
 description: 阅读与学习笔记的检索、分析、答疑与总结助手。当用户提供读书笔记、课程笔记、学习笔记初稿，或提到某本书 / 某章节 / 某学习主题并希望整理、校对、纠错、答疑或生成总结时，使用本技能。支持小节、章节、全书三种粒度的总结，输出可直接粘贴到 Notion 的 Markdown。只要用户提到「读书笔记」「学习笔记」「笔记总结」「帮我整理这一章」「复盘这本书」「校对一下我的笔记」等场景，即便没有明确点名技能，也应使用本技能。Use this skill to research, analyze, fact-check, clarify, and summarize reading or study notes (读书笔记 / 学习笔记) at section, chapter, or whole-book granularity, producing Notion-ready Markdown.
+summary: 读书/学习笔记的校对、答疑与分级总结
 ---
 
 # 阅读 / 学习笔记助手

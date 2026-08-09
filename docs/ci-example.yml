@@ -25,3 +25,6 @@ jobs:
             name=$(basename "$p" .json)
             ./bin/skills-hub profile show "$name" >/dev/null
           done
+      - name: 校验 README 技能清单未过期
+        # 改了技能/索引/组合却忘了跑 `skills-hub readme --sync` 时，在 PR 上拦住
+        run: ./bin/skills-hub readme --check

@@ -725,6 +725,35 @@ def cmd_project(args) -> int:
     return 0
 
 
+def cmd_readme(args) -> int:
+    from . import readme as readme_mod
+
+    if args.print:
+        print(readme_mod.generate_inventory())
+        return 0
+
+    up_to_date, missing = readme_mod.sync(check_only=args.check)
+    for key in missing:
+        warn(f"README 里找不到 <!-- {key}:BEGIN --> / <!-- {key}:END --> 标记，该块未生成")
+    if missing:
+        # 标记缺失时内容不可能是最新的，别用「已是最新」误导
+        die(f"{len(missing)} 个生成块缺少标记，请先在 README 中放置标记对")
+
+    if args.check:
+        if up_to_date:
+            ok("README 技能清单已是最新")
+            return 0
+        fail_msg = "README 技能清单已过期，请运行 `skills-hub readme --sync`"
+        print(f"{red('✗')} {fail_msg}", file=sys.stderr)
+        return 1
+
+    if up_to_date:
+        ok("README 已是最新，无需改动")
+    else:
+        ok(f"已更新 {readme_mod.readme_path()}")
+    return 0
+
+
 def cmd_path(args) -> int:
     print(HUB_SKILLS if not args.repo else repo_root())
     return 0
@@ -849,6 +878,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("project", help="在某个项目里挂载技能")
     p.add_argument("path", nargs="?", default=".")
     p.set_defaults(func=cmd_project)
+
+    p = sub.add_parser("readme", help="从实时数据重新生成 README 的技能清单与组合表")
+    p.add_argument("--sync", action="store_true", help="写回 README（默认行为）")
+    p.add_argument("--check", action="store_true", help="只校验是否过期，CI 用（过期返回 1）")
+    p.add_argument("--print", action="store_true", help="只打印清单，不写文件")
+    p.set_defaults(func=cmd_readme)
 
     p = sub.add_parser("path", help="打印 hub 路径")
     p.add_argument("--repo", action="store_true", help="改为打印仓库路径")

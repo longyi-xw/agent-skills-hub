@@ -4,6 +4,7 @@ description: 代码安全与漏洞审核。当用户要求「审一下这段代�
 category: quality
 tags: [security, vulnerability, audit, code-review, appsec]
 status: verified
+summary: 漏洞审核：注入/越权/密钥/SSRF/反序列化，产出定位到行的清单
 ---
 
 # 代码漏洞审核

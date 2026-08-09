@@ -12,7 +12,8 @@
         "设计",
         "创意",
         "前期"
-      ]
+      ],
+      "summary": "创造性工作动手前先探索意图与设计"
     },
     "systematic-debugging": {
       "source": "superpowers",
@@ -24,7 +25,8 @@
         "排障",
         "根因分析",
         "测试"
-      ]
+      ],
+      "summary": "提修复方案前先做系统化根因定位"
     },
     "test-driven-development": {
       "source": "superpowers",
@@ -36,7 +38,8 @@
         "TDD",
         "质量",
         "开发流程"
-      ]
+      ],
+      "summary": "红-绿-重构，先写测试再写实现"
     },
     "writing-skills": {
       "source": "superpowers",
@@ -47,7 +50,8 @@
         "技能开发",
         "文档",
         "方法论"
-      ]
+      ],
+      "summary": "把 TDD 思路套用到技能文档编写"
     },
     "skill-creator": {
       "source": "anthropic",
@@ -59,7 +63,8 @@
         "脚手架",
         "评测",
         "官方"
-      ]
+      ],
+      "summary": "官方技能创作/优化/评测指南（new 命令默认参考）"
     },
     "shadcn": {
       "source": "shadcn",
@@ -71,7 +76,8 @@
         "React",
         "Tailwind",
         "UI"
-      ]
+      ],
+      "summary": "shadcn 组件的增删查改、样式与组合、Radix→Base UI 迁移"
     },
     "frontend-design": {
       "source": "anthropic",
@@ -82,7 +88,8 @@
         "视觉设计",
         "UI",
         "样式"
-      ]
+      ],
+      "summary": "有辨识度的界面视觉设计指导"
     },
     "webapp-testing": {
       "source": "anthropic",
@@ -93,7 +100,8 @@
         "Playwright",
         "浏览器",
         "验证"
-      ]
+      ],
+      "summary": "用 Playwright 驱动真实浏览器测试本地 Web 应用"
     },
     "verification-before-completion": {
       "source": "superpowers",
@@ -104,7 +112,8 @@
         "收尾",
         "质量",
         "防误报"
-      ]
+      ],
+      "summary": "宣称「完成」前必须先跑验证并确认输出"
     },
     "writing-plans": {
       "source": "superpowers",
@@ -115,7 +124,8 @@
         "方案",
         "前期",
         "多步任务"
-      ]
+      ],
+      "summary": "多步任务动代码前先写方案"
     },
     "executing-plans": {
       "source": "superpowers",
@@ -126,7 +136,8 @@
         "执行",
         "分阶段",
         "评审点"
-      ]
+      ],
+      "summary": "按已写好的方案分阶段执行、带评审点"
     },
     "dispatching-parallel-agents": {
       "source": "superpowers",
@@ -137,7 +148,8 @@
         "子agent",
         "任务拆分",
         "效率"
-      ]
+      ],
+      "summary": "独立任务并行拆分给子 agent"
     },
     "using-git-worktrees": {
       "source": "superpowers",
@@ -148,7 +160,8 @@
         "工作区隔离",
         "分支",
         "环境"
-      ]
+      ],
+      "summary": "用 worktree 隔离工作区"
     },
     "mcp-builder": {
       "source": "anthropic",
@@ -159,7 +172,8 @@
         "服务端",
         "工具集成",
         "协议"
-      ]
+      ],
+      "summary": "构建高质量 MCP 服务端"
     },
     "docx": {
       "source": "anthropic",
@@ -170,7 +184,8 @@
         "Word",
         "办公",
         "读写"
-      ]
+      ],
+      "summary": "Word 文档读取、生成、编辑"
     },
     "xlsx": {
       "source": "anthropic",
@@ -181,7 +196,8 @@
         "Excel",
         "数据",
         "办公"
-      ]
+      ],
+      "summary": "Excel 表格与数据处理"
     },
     "pdf": {
       "source": "anthropic",
@@ -192,7 +208,8 @@
         "文档",
         "解析",
         "表单"
-      ]
+      ],
+      "summary": "PDF 解析、提取、表单处理"
     },
     "pptx": {
       "source": "anthropic",
@@ -203,7 +220,8 @@
         "PPT",
         "幻灯片",
         "办公"
-      ]
+      ],
+      "summary": "PPT 幻灯片生成与编辑"
     }
   }
 }

@@ -71,18 +71,20 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 
 切换会重建 hub 并刷新所有已接入 agent。内置组合：
 
+<!-- PROFILES:BEGIN -->
 | 组合 | 技能数 | 内容 |
 |---|---|---|
-| `default` | 9 | 需求整理 + 项目理解 + 记忆/上下文 + 安全审核 + 写方案 + 收尾验证 |
-| `frontend` | 13 | 前端开发 + shadcn 组件 + 视觉设计 + 视觉验证 + Playwright 测试 |
-| `backend-python` | 9 | Python 后端 + 脚本开发 + 安全审核 |
-| `reverse` | 9 | 逆向分析 + 脚本 + 后端 + 功能梳理 |
-| `review` | 7 | 漏洞审核 + 视觉验证 + 项目理解 + 收尾验证（不含实现类） |
-| `workflow` | 12 | 研发方法论：TDD、系统化调试、头脑风暴、计划、并行、写技能 |
-| `documents` | 8 | Word / Excel / PPT / PDF 文档处理 |
-| `minimal` | 2 | 只留记忆与上下文管理 |
-| `base` | 4 | 基础层，被其它组合 `extends` 继承 |
-| `all` | 30 | 全部技能 |
+| `backend-python` | 9 | Python 服务端与自动化脚本开发，含安全审核。 |
+| `base` | 4 | 任何场景都应常驻的技能：需求澄清 + Agent 记忆与上下文管理。其它组合通过 extends 继承本层。 |
+| `default` | 9 | 日常开发默认组合：需求整理、项目理解、记忆与上下文、代码安全审核。不含前端/逆向等重型技能。 |
+| `documents` | 8 | 处理 Word/Excel/PPT/PDF 等办公文档时启用，叠加基础层。 |
+| `frontend` | 13 | 前端 / 桌面端开发：界面实现 + 视觉验证测试 + 需求与项目理解。 |
+| `minimal` | 2 | 只保留记忆与上下文管理，适合上下文紧张的长会话或小改动。 |
+| `reverse` | 9 | 客户端/协议逆向与取证分析：逆向流程、脚本开发、安全审核，不加载前端与需求类技能以省上下文。 |
+| `review` | 7 | 只做代码审核与验证：漏洞审核 + 视觉验证 + 项目理解，不加载实现类技能，避免 agent 顺手改代码。 |
+| `workflow` | 12 | 常驻的通用工作方法：头脑风暴、TDD、系统化调试、写技能。适合叠加在任何开发场景之上。 |
+| `all` | 30 | 仓库全部技能（内置组合） |
+<!-- PROFILES:END -->
 
 自定义：`skills-hub profile create mine --categories backend,quality --skills agent-memory`
 
@@ -90,7 +92,11 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 
 ## 技能清单
 
-共 **30 个**技能：**12 个原创**（内容在本仓库）+ **18 个索引**（指针在仓库，内容 sync 时下载）。
+> 本节由 `skills-hub readme --sync` 从实时数据生成，请勿手改标记之间的内容。
+> 增删技能后跑一次即可；CI 用 `skills-hub readme --check` 拦住忘记同步的 PR。
+
+<!-- SKILLS:BEGIN -->
+共 **30 个**技能：**12 个原创**（内容在本仓库） + **18 个索引**（指针在仓库，内容 sync 时下载）。
 用 `skills-hub list` 查看实时状态，`skills-hub list --category <分类>` 按分类筛选。
 
 #### 需求整理 `requirements`
@@ -101,15 +107,15 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 #### 功能梳理与项目理解 `analysis`
 | 技能 | 归属 | 用途 |
 |---|---|---|
-| `project-onboarding` | 原创 | 陌生仓库快速上手：结构、技术栈、数据流、新功能该加在哪 |
 | `feature-mapping` | 原创 | 深挖单条功能链路：入口→数据流→出口，给出影响面清单 |
+| `project-onboarding` | 原创 | 陌生仓库快速上手：结构、技术栈、数据流、新功能该加在哪 |
 
 #### 前端开发 `frontend`
 | 技能 | 归属 | 用途 |
 |---|---|---|
 | `frontend-development` | 原创 | 前端/桌面端实现规范：先复用后新建、状态选型、可访问性、自测清单 |
-| `shadcn` | 索引 · shadcn/ui | shadcn 组件的增删查改、样式与组合、Radix→Base UI 迁移 |
 | `frontend-design` | 索引 · anthropic | 有辨识度的界面视觉设计指导 |
+| `shadcn` | 索引 · shadcn/ui | shadcn 组件的增删查改、样式与组合、Radix→Base UI 迁移 |
 
 #### 后端开发 `backend`
 | 技能 | 归属 | 用途 |
@@ -124,8 +130,8 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 |---|---|---|
 | `security-audit` | 原创 | 漏洞审核：注入/越权/密钥/SSRF/反序列化，产出定位到行的清单 |
 | `visual-verification` | 原创 | 界面改动的截图验证：多视口/主题/状态矩阵、前后对比 |
+| `verification-before-completion` | 索引 · superpowers | 宣称「完成」前必须先跑验证并确认输出 |
 | `webapp-testing` | 索引 · anthropic | 用 Playwright 驱动真实浏览器测试本地 Web 应用 |
-| `verification-before-completion` | 索引 · superpowers | 宣称"完成"前必须先跑验证并确认输出 |
 
 #### Agent 记忆与上下文 `agent-ops`
 | 技能 | 归属 | 用途 |
@@ -137,30 +143,31 @@ skills-hub profile use review       # 只做代码审核，不加载实现类技
 | 技能 | 归属 | 用途 |
 |---|---|---|
 | `brainstorming` | 索引 · superpowers | 创造性工作动手前先探索意图与设计 |
+| `dispatching-parallel-agents` | 索引 · superpowers | 独立任务并行拆分给子 agent |
+| `executing-plans` | 索引 · superpowers | 按已写好的方案分阶段执行、带评审点 |
+| `skill-creator` | 索引 · anthropic | 官方技能创作/优化/评测指南（new 命令默认参考） |
 | `systematic-debugging` | 索引 · superpowers | 提修复方案前先做系统化根因定位 |
 | `test-driven-development` | 索引 · superpowers | 红-绿-重构，先写测试再写实现 |
-| `writing-plans` | 索引 · superpowers | 多步任务动代码前先写方案 |
-| `executing-plans` | 索引 · superpowers | 按已写好的方案分阶段执行、带评审点 |
-| `dispatching-parallel-agents` | 索引 · superpowers | 独立任务并行拆分给子 agent |
 | `using-git-worktrees` | 索引 · superpowers | 用 worktree 隔离工作区 |
+| `writing-plans` | 索引 · superpowers | 多步任务动代码前先写方案 |
 | `writing-skills` | 索引 · superpowers | 把 TDD 思路套用到技能文档编写 |
-| `skill-creator` | 索引 · anthropic | 官方技能创作/优化/评测指南（`new` 命令默认参考） |
 
 #### 文档处理 `documents`
 | 技能 | 归属 | 用途 |
 |---|---|---|
 | `docx` | 索引 · anthropic | Word 文档读取、生成、编辑 |
-| `xlsx` | 索引 · anthropic | Excel 表格与数据处理 |
-| `pptx` | 索引 · anthropic | PPT 幻灯片生成与编辑 |
 | `pdf` | 索引 · anthropic | PDF 解析、提取、表单处理 |
+| `pptx` | 索引 · anthropic | PPT 幻灯片生成与编辑 |
+| `xlsx` | 索引 · anthropic | Excel 表格与数据处理 |
 
 #### 知识与学习 `knowledge`
 | 技能 | 归属 | 用途 |
 |---|---|---|
 | `study-notes` | 原创 | 读书/学习笔记的校对、答疑与分级总结 |
 
-> **原创** = 内容在本仓库 `skills/team/`，本仓库即其来源。
+> **原创** = 内容在本仓库 `skills/team/`，本仓库即其来源。  
 > **索引** = 只在 `registry/manifest.json` 存指针，`sync` 时从上游下载最新版，不占仓库体积。
+<!-- SKILLS:END -->
 
 ---
 
@@ -274,6 +281,7 @@ skills-hub sources add myteam org/skills-repo # 登记自定义源
 | `status` | 当前状态总览 |
 | `doctor` | 体检：重复副本、失效链接、可回收缓存 |
 | `clean [--apply]` | 清理冗余（默认只预演） |
+| `readme --sync` | 从实时数据重新生成 README 的技能清单与组合表（`--check` 供 CI 校验是否过期） |
 | `project [路径]` | 在某个项目里挂载技能（`.agents/skills`） |
 | `path [--repo]` | 打印 hub / 仓库路径 |
 
@@ -326,6 +334,7 @@ skills-hub clean --apply   # 确认后实际删除
 ---
 name: my-skill                 # kebab-case，须与目录名一致
 description: 一句话说清「什么场景下触发」——agent 靠它决定是否启用本技能
+summary: 简短用途，用于 README 清单等目录场景（缺省则截断 description）
 category: backend              # 须在 registry/categories.json 登记
 tags: [python, cli]
 status: verified               # team 技能须 verified；local 可 draft

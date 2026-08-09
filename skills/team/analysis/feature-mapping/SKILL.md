@@ -4,6 +4,7 @@ description: 把一个已有功能的完整链路梳理清楚，用于改动前�
 category: analysis
 tags: [code-analysis, tracing, impact-analysis, debugging]
 status: verified
+summary: 深挖单条功能链路：入口→数据流→出口，给出影响面清单
 ---
 
 # 功能梳理

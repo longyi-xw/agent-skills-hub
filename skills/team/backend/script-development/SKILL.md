@@ -4,6 +4,7 @@ description: 自动化脚本与命令行小工具的开发规范，偏向 Python
 category: backend
 tags: [scripting, automation, cli, python, shell]
 status: verified
+summary: 自动化脚本：参数化、幂等、dry-run、破坏性操作保护
 ---
 
 # 脚本开发

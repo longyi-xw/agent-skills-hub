@@ -1,6 +1,7 @@
 ---
 name: requirement-analysis
 description: 以资深产品经理视角，从项目立项文档、市场需求文档（MRD）、产品需求文档（PRD）、原型说明、需求评审纪要等材料中提炼关键产品需求，并把「产品语言」翻译成「研发语言」——产出面向研发工程师（前端 / 后端 / 移动端 / 算法 / 数据 / 测试 / 运维皆可）的项目流程图、架构设计图、易懂的核心需求说明、精准的项目简介，以及研发视角的实施难点总结。当用户说「帮我分析一下这份需求」「读一下这个 PRD」「把这个需求讲成研发能看懂的」「梳理一下这个项目要做什么」「这个立项文档在说啥」「需求解读」「需求评审」「拿到一份需求文档想快速上手」「这个功能架构怎么设计」，或提供任何需求 / 立项 / 产品文档并希望转成工程可落地的理解时，使用本技能。注意与 project-onboarding 区分：那个读的是「已有代码仓库」，本技能读的是「还没开工的需求文档」。Use this skill to act as a product manager who distills project charters, MRDs, PRDs, and requirement docs into engineer-facing deliverables — process flow diagrams, architecture diagrams, a clear core-requirements spec, a concise project brief, and an engineering-perspective summary of implementation challenges.
+summary: 把 PRD / MRD / 立项文档翻译成研发能落地的流程图、架构图与实施难点
 ---
 
 # Requirement Analysis（需求分析 · 产品需求转研发视角）

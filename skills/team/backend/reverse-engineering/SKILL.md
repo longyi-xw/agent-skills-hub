@@ -4,6 +4,7 @@ description: 客户端 / 协议 / 二进制的逆向与动态分析方法论，�
 category: backend
 tags: [reverse-engineering, frida, protocol, binary, security-research]
 status: verified
+summary: 授权场景下的逆向：静态+动态、Frida、抓包、加固对抗
 ---
 
 # 逆向分析

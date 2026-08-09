@@ -4,6 +4,7 @@ description: Python 服务端与数据处理代码的开发规范。当用户要
 category: backend
 tags: [python, backend, api, fastapi, asyncio, database]
 status: verified
+summary: Python 服务端：接口分层、同步/异步选型、DB、密钥、日志
 ---
 
 # Python 后端开发

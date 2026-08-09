@@ -4,6 +4,7 @@ description: Agent 的长期记忆管理——决定什么值得记、怎么存�
 category: agent-ops
 tags: [memory, agent, persistence, recall]
 status: verified
+summary: 长期记忆：什么值得记、怎么存、召回时如何判断可信度
 ---
 
 # Agent 记忆管理

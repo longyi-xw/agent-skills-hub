@@ -4,6 +4,7 @@ description: 前端与桌面端功能开发的执行规范。当用户要求「�
 category: frontend
 tags: [frontend, react, vue, typescript, ui, electron]
 status: verified
+summary: 前端/桌面端实现规范：先复用后新建、状态选型、可访问性、自测清单
 ---
 
 # 前端开发

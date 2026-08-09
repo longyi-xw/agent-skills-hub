@@ -103,6 +103,19 @@ class Skill:
         return desc
 
     @property
+    def summary(self) -> str:
+        """一句话用途，用于 README 清单等目录场景。
+
+        原创技能写在 SKILL.md 的 `summary:` 字段；索引技能写在 manifest 条目里。
+        都没有时退化为截断的 description（可读性较差，应尽量补 summary）。
+        """
+        explicit = str(self.meta.get("summary", "")).strip()
+        if explicit:
+            return explicit
+        desc = self.description
+        return desc[:60] + "…" if len(desc) > 60 else desc
+
+    @property
     def status(self) -> str:
         """team 技能默认视为已评审通过；local 技能标记为 local；indexed 单列。"""
         if self.origin == "indexed":
@@ -186,6 +199,9 @@ def _discover_indexed(exclude: set[str]) -> list[Skill]:
             meta.setdefault("description", entry.description)
         if entry.tags:
             meta.setdefault("tags", entry.tags)
+        # summary 以索引里登记的为准 —— 上游 frontmatter 通常没有这个字段
+        if entry.summary:
+            meta["summary"] = entry.summary
         skills.append(Skill(
             name=entry.name,
             scope="indexed",

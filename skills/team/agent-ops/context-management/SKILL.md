@@ -4,6 +4,7 @@ description: 长会话与大任务中的上下文预算管理——决定什么�
 category: agent-ops
 tags: [context, token-budget, retrieval, long-tasks]
 status: verified
+summary: 上下文预算：分层加载、外置中间结果、子任务隔离、交接固化
 ---
 
 # 上下文管理
