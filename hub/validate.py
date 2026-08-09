@@ -67,6 +67,14 @@ def _check(skill: Skill) -> list[Issue]:
         if not re.search(r"(when|use this|使用本技能|当用户|适用于)", description, re.I):
             warn("description 建议明确触发条件（如「当用户……时使用本技能」）")
 
+    summary = str(meta.get("summary", "")).strip()
+    if not summary:
+        warn("缺少 summary —— README 技能清单会退化成截断的 description")
+    elif "请用一句话写清用途" in summary:
+        err("summary 仍是 `new` 生成的占位文字，请改成真实用途")
+    elif len(summary) > 60:
+        warn(f"summary 长度 {len(summary)} 偏长，清单里建议 30 字以内的一句话")
+
     categories = load_categories()
     if categories and skill.category not in categories:
         err(f"分类 '{skill.category}' 未在 registry/categories.json 中登记")

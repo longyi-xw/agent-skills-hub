@@ -13,6 +13,7 @@ from .validate import NAME_RE
 TEMPLATE = """---
 name: {name}
 description: {description}
+summary: {summary}
 category: {category}
 tags: [{tags}]
 status: {status}
@@ -56,7 +57,8 @@ def _slug(text: str) -> str:
 
 
 def create(name: str, category: str, scope: str = "local",
-           description: str = "", force: bool = False) -> Path:
+           description: str = "", force: bool = False,
+           summary: str = "") -> Path:
     slug = _slug(name)
     if not NAME_RE.match(slug):
         raise ValueError(f"技能名 '{name}' 无法转换为合法的 kebab-case")
@@ -76,6 +78,7 @@ def create(name: str, category: str, scope: str = "local",
     content = TEMPLATE.format(
         name=slug,
         description=description or f"当用户需要 {name} 时使用本技能。请补全触发场景描述。",
+        summary=summary or f"{name}（请用一句话写清用途，会显示在 README 技能清单里）",
         category=category,
         tags=category,
         status="draft" if scope == "local" else "verified",

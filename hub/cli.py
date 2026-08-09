@@ -210,14 +210,16 @@ SKILL_CREATOR_HINT = (
     "本命令用于**从零创作**技能，默认遵循 skill-creator 方法论：\n"
     "  1. 先想清楚「agent 在什么场景下、缺了什么会失败」——这决定 description 的触发词\n"
     "  2. SKILL.md 只写触发条件 + 主流程 + 反面案例；细节拆到 references/ 按需加载\n"
-    "  3. 写完用 `skills-hub validate <name>` 自检\n"
+    "  3. 把 frontmatter 里的 summary 占位改成真实用途（会进 README 清单，validate 会拦）\n"
+    "  4. 写完用 `skills-hub validate <name>` 自检\n"
     "  （若已 vendor 了 skill-creator 技能，可让 agent 直接调用它协助创作）"
 )
 
 
 def cmd_new(args) -> int:
     try:
-        path = scaffold.create(args.name, args.category, args.scope, args.description or "")
+        path = scaffold.create(args.name, args.category, args.scope,
+                               args.description or "", summary=args.summary or "")
     except (ValueError, FileExistsError) as exc:
         die(str(exc))
     ok(f"已创建 {path}")
@@ -796,6 +798,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--category", required=True)
     p.add_argument("--scope", choices=list(SCOPES), default="local")
     p.add_argument("--description")
+    p.add_argument("--summary", help="一句话用途，显示在 README 技能清单里")
     p.set_defaults(func=cmd_new)
 
     p = sub.add_parser("add", help="把在线技能加入索引并下载（owner/repo[:path] 或 <源id>:<技能>）")

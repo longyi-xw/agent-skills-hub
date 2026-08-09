@@ -346,7 +346,12 @@ status: verified               # team 技能须 verified；local 可 draft
 ## 反面案例
 ```
 
-`skills-hub validate` 会检查：命名规范、name 与目录一致、description 长度与触发词、分类已登记、正文不泄漏本机绝对路径、引用文件存在等。
+`skills-hub validate` 会检查：命名规范、name 与目录一致、description 长度与触发词、
+summary 是否已从占位改成真实用途、分类已登记、正文不泄漏本机绝对路径、引用文件存在等。
+
+> `skills-hub new` 生成的骨架已带 `summary` 占位；不改就过不了 `validate`，
+> 因此 README 清单里不会出现「没写用途」的技能。也可以直接
+> `skills-hub new <名> --category <分类> --summary "一句话用途"` 一步到位。
 
 ---
 
